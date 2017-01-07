@@ -14,7 +14,13 @@
 
 using namespace std;
 
-int main_ising() {
+vec_sz index(const vec_sz x, const vec_sz y,unsigned N)
+{	//Return the correct index for 1d representation of 2d matrices; do not change data members
+	//See http://stackoverflow.com/questions/936687/how-do-i-declare-a-2d-array-in-c-using-new
+	return  x + N* y;
+}
+
+int test_lattice() {
 	//Test for class lattice.h
 
 	//Tests for constructors
@@ -59,8 +65,8 @@ int main_ising() {
 	cout<<"[+]Custom constructor with N=4,q=4"<<endl;
 	try
 	{
-		Lattice l6(4);
-		cout<<"[+]Custom constructor succeeded with N=4, q=4"<<endl;
+		Lattice l6(6);
+		cout<<"[+]Custom constructor succeeded with N=6, q=4"<<endl;
 		total_test++;
 	}
 	catch(...){
@@ -69,7 +75,7 @@ int main_ising() {
 		total_test++;}
 
 	//Tests for private data members: ONLY WITH DEBUG GETTER FUNCTIONS
-	Lattice l6(4);
+	Lattice l6(5);
 	cout<<"[+]Test for private data members:"<<endl;
 
 	try	{
@@ -77,11 +83,9 @@ int main_ising() {
 		//Best way to print a vector, see e.g. http://stackoverflow.com/questions/10750057/how-to-print-out-the-contents-of-a-vector/11335634#11335634
 		//the std::copy function copy the vector to the std output
 		vector<int> path1(l6.dbg_get_spin());
-		//copy(path.begin(), path.end(), ostream_iterator<int>(cout, " "));
-		for(unsigned i=0; i<path1.size(); i++) {
-			cout<<path1[i]<<" ";
-			if(i%path1.size() == 0) cout<<"\n";
-		}
+		copy(path1.begin(), path1.end(), ostream_iterator<int>(cout, " "));
+
+		cout<<endl;
 		cout<<"[+]Size of the spin matrix is:"<<path1.size()<<endl;
 		cout<<"\n";
 		total_test++;
@@ -94,14 +98,34 @@ int main_ising() {
 	}
 	try
 	{
-
-		cout<<"[+]The adjacency matrix is:"<<endl;
+		cout<<"[+]The adjacency matrix is:";
 		vector<int> path2(l6.dbg_get_weight());
+		unsigned N = l6.get_dimension();
 		//copy(path.begin(), path.end(), ostream_iterator<int>(cout, " "));
-		for(unsigned i =0; i<path2.size(); i++) cout<<path2[i]<<" ";
+		for(unsigned i =0; i<path2.size(); i++) {
+			if(i%N==0) cout<<"\n";
+			cout<<path2[i]<<" ";
+		}
 		cout<<"\n";
 		cout<<"[+]Size of the adjacency matrix is:"<<path2.size()<<endl;
 		total_test++;
+		int symmetry=0;
+		for(unsigned i=0; i<N; i++)
+		{
+			for(unsigned j=0; j<N; j++)
+					{
+						if(path2[index(i,j,N)]!=path2[index(j,i,N)]) symmetry =1;
+					}
+		}
+
+		if(symmetry==0) cout<<"[+] Adjacency matrix is symmetric"<<endl;
+		else cout<<"[!]Adjacency matrix not symmetric"<<endl;
+
+		cout<<"[+]Test of the neighbors() function:"<<endl;
+		vector<vec_sz> neighs0 = l6.neighbors(0);
+		cout<<"Neighbors of node 0 are:"<<endl;
+		copy(neighs0.begin(), neighs0.end(),  ostream_iterator<int>(cout, " ") );
+		cout<<endl;
 	}
 	catch(...)
 	{
@@ -113,7 +137,7 @@ int main_ising() {
 	try
 	{
 		cout<<"[+]The dimension is:";
-		cout<<l6.dbg_get_dimension()<<endl;
+		cout<<l6.get_dimension()<<endl;
 		total_test++;
 	}
 	catch(...)
@@ -122,11 +146,10 @@ int main_ising() {
 		total_test++;
 		failed_test++;
 	}
-
 	try
 	{
 		cout<<"[+]The coord number  is:";
-		cout<<l6.dbg_get_coord_number()<<endl;
+		cout<<l6.get_coord_number()<<endl;
 		total_test++;
 	}
 	catch(...)

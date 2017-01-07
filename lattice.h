@@ -45,16 +45,19 @@ class Lattice: public TObject {
 
 		vector<int> dbg_get_spin();
 		vector<int> dbg_get_weight();
-		vec_sz dbg_get_dimension();
-		unsigned int dbg_get_coord_number();
+
+		//Public getter functions:
+		vec_sz get_dimension();
+		unsigned int get_coord_number();
 
 	private:
 		//Data members
 		vector<int> spin; //std::vector instead of C-like array! contains matrix of spins, allocated dynamically
 					      //for this choice see: http://stackoverflow.com/questions/381621/using-arrays-or-stdvectors-in-c-whats-the-performance-gap
-		const vector<int> weight; // contains the constant adjacency matrix of the lattice, allocated dynamically
+		vector<int> weight; // contains the constant adjacency matrix of the lattice, allocated dynamically
 		const vec_sz dimension; // For the use of size_t instead of unsigned int
 								//see e.g. http://stackoverflow.com/questions/1951519/when-should-i-use-stdsize-t
+		const vec_sz lenght;
 		const unsigned int coord_number;
 		//Private member functions:
 		//initialization procedures

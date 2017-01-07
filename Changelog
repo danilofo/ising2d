@@ -46,3 +46,15 @@ il costruttore esegue un controllo per determinare il tipo di reticolo da creare
 
 [+]Possibile causa dei seg fault: le funzioni init* inizializzavano delle variabili LOCALI spin e weight, e non i member Lattice::spin e Lattice::weight! Tuttavia non è possibile correggere in modo banale: il compilatore proibisce la definizione o la ridichiarazione dei data member all'interno di una funzione 
 
+07-01-17(df):
+[+]Modifica della classe Lattice: rimossa la keyword const al vettore weight per risolvere il problema di inizializzazione; ora il costruttore dichiara tutti i membri della classe e li inizializza a zero, dopo di che le funzioni init* provvedono al riempimento (con un controllo per evitare doppi tentativi di inizializzazione!)
+
+[+]Corretto un errore nel costruttore: Lattice(N) inizializza un reticolo con N spin in ogni lato, in modo da avere sempre un quadrato;
+
+[+]Corretto un errore nell'uso di strncmp: if(strncmp()) ---> if(strncmp() == 0)
+
+[+]Le funzioni getter per dimension e coord_number vengono rinominate e rese disponibili all'utente finale;
+
+[!]Nel file ising2D viene rinominata la funzione usata per il test della classe lattice: test_lattice(); viene aggiunta l'utility index(int, int,int) per facilitare i test; la classe passa tutti i test finora svolti;
+
+
