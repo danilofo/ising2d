@@ -164,6 +164,13 @@ const vector<vec_sz> Lattice::neighbors( const vec_sz i) const
 
 }
 
+const int Lattice::spin_value(const vec_sz i) //return the state of an individual spin
+{	int spin_i=0;
+	const vec_sz &N=this->dimension;
+	if(i<N)spin_i= this->spin[i];
+	else cout<<"[!] Node "<<i<<" is not in the graph"<<endl;
 
+	return spin_i;
+}
 
 

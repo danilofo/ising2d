@@ -75,7 +75,7 @@ int test_lattice() {
 		total_test++;}
 
 	//Tests for private data members: ONLY WITH DEBUG GETTER FUNCTIONS
-	Lattice l6(5);
+	Lattice l6(150);
 	cout<<"[+]Test for private data members:"<<endl;
 
 	try	{
@@ -158,6 +158,5 @@ int test_lattice() {
 		total_test++;
 		failed_test++;
 	}
-
 	return 0;
 }

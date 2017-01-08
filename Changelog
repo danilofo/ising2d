@@ -57,4 +57,16 @@ il costruttore esegue un controllo per determinare il tipo di reticolo da creare
 
 [!]Nel file ising2D viene rinominata la funzione usata per il test della classe lattice: test_lattice(); viene aggiunta l'utility index(int, int,int) per facilitare i test; la classe passa tutti i test finora svolti;
 
+09-01-17(df)
+[-]Si comincia a implementare la classe IsingModel che gestisce le istanze di simulazione tramite MCMC; La struttura della classe fa rifermento ad una prima idea di modifica della classe Lattice che sfrutti l'ereditarietà per semplificare l'eventuale estensione del programma, di seguito schematizzata:
+class Graph <--(Is a)-- class Lattice (e questo permette di estendere le simulazioni a grafi generici) 
+inoltre si potrebbe costruire una classe SpinNode, per sostituire i vector<int> che rappresentano gli spin all'interno del grafo (per ora, nella classe Lattice); in questo modo si potrebbero creare dei controlli più stringenti sulle variabili di spin e implementare il metodo flip a questo livello (in questo modo, si faciliterebbe l'estensione a modelli più complessi, tipo XY: basta cambiare la classe spin e creare un oggetto XYModel che implementi l'hamiltoniana corretta; 
+Per questo stesso motivo, la classe IsingModel viene scorporata come:
+SimulationModel<--(Is a)--IsingModel; così l'unica funzione da reimplementare in una estensione è l'hamiltoniana;
+
+[-]Implementazione delle funzioni hamiltonian() e simulate() della classe IsingModel
+
+[-]Prima versione compilata correttamente; nessun test effettuato 
+
+
 

@@ -40,6 +40,10 @@ class Lattice: public TObject {
 		//Functionalities
 		void flip(const vec_sz ); //flip the i-th node
 		const vector<vec_sz> neighbors( const vec_sz ) const; //returns an array with neighbors' index
+		const int spin_value(const vec_sz); //return the state of an individual spin
+
+		//TODO: implement a reset(const char * flag ) function (identical to initSpins;
+		//Needed to simulate an ising model several times with the same lattice
 
 		//DEBUG ONLY GETTER FUNCTIONS
 
