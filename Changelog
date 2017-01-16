@@ -1,0 +1,72 @@
+05-01-17(df): 
+[+]12:00 Debugging della classe Lattice precedentemente abbozzata; il vettore site[] viene rinominato spin[], così come la relativa funzione initSite è ora definita initSpins; prima compilazione di lattice.C senza errori (usa ancora array del C, keyword const non aggiunta)
+
+[-]Si inserisce il descrittore di dichiarazione const nelle definizioni e nelle dichiarazioni seguendo la raccomandazione di Effective C++ ch.1 item 3 p.34
+
+[+]MODIFICA: si introduce la rappresentazione 1d della matrici di adiacenza del reticolo e della matrice di spin, la funzione costante index per semplificare l'indicizzazione di tali rappresentazioni (scelte documentate in lattice.h alle righe rilevante)
+
+[+]MODIFICA della funzione di inizializzazione initSpins per compensare la precedente
+
+[+]si introduce la classe std::vector invece degli array C (motivazione documentata in lattice.h alla riga rilevante); 
+
+[-]si definisce il tipo vec_sz per i vettori di interi, si veda Accelerated C++(.pdf) 3.2.2 p.72
+
+[+]MODIFICA: procedure di inizializzazione rese private
+
+[!]Prima versione di lattice.h; si passa all'implementazione di lattice.C 
+
+[!]19:30 - Compilazione senza errori; mancano da implementare ancora la funzione neighbors e da controllare l'inizializzazione della matrice di adiacenza; WARNINGS: 1. le opzioni del compilatore usato da ROOT ignorarano le funzioni costanti (!); 2. all'interno dei loop ci sono confronti fra signed int e vec_sz, che è un tipo unsigned; 
+
+[+] Si introducono delle reference(&) costanti per sostituire le variabili locali create per comodità nelle funzioni index,initRectangularLattice, neighbors, 
+
+[-]Implementata la funzione neighbors
+
+[+]Si introduce il numero di coordinazione nel costruttore, con valore di default q=4; 
+il costruttore esegue un controllo per determinare il tipo di reticolo da creare
+
+[!]Primo test in ambiente ROOT: la creazione di oggetti Lattice(n,q) causa un crash;
+
+[+]Cambiata la funzione di inizializzazione per weight precedentemente abbozzata
+
+-TODO-list: 
+2.creare test per Lattice in ising2D.C
+3.cambiare le opzioni di compilazione
+
+06-01-17(df):
+[-]Introdotta l'ereditarietà di Lattice da TObject come controllo sull'errore di ROOT riscontrato; 
+
+[-]Primo test usando ising2D.C: la compilazione avviene correttamente, non ci sono problemi con i costruttori ; manca un warning in  flip e neighbors se si tenta du accedere ad un nodo che non esiste (aggiunto ); problemi con l'operatore di assegnazione =: il C++ non crea tale operatore se fra i membri della classe esiste un oggetto non statico (costante di tipo "non-class")/di tipo reference/ che manca di costruttore di copia. In questo caso si tratta del vettore weight
+ 
+[!] Tentativo di aggiunta esplicita dell'operatore = all'header di lattice.h e di un costruttore di copia; COMUNQUE, come notato in http://stackoverflow.com/questions/26131921/const-class-member-copy-constructor, tale operatore di assegnazione non ha alcun senso per un oggetto con membri constanti: modifica della funzione di test
+[!] Aggiornamento sull'operatore di assegnazione: http://www.drdobbs.com/the-problem-with-const-data-members/184403306 fa notare che la limitazione di cui sopra rende impossibile creare array di oggetti, utili ad esempio per operazioni di media; la soluzione è quella di utilizzare un operatore di assegnazione che violi esplicitamente il vincolo const; 
+
+[+] Corretto il costruttore di Lattice: i parametri di default vanno messi nella definizione (header) non nella dichiarazione della funzione 
+
+[+]Secondo il suggerimento dei warnings, si sostituiscono gli int nei cicli for se il confronto avviene con una variabile di tipo unsigned; al loro posto si usa unsigned int
+
+[+]Possibile causa dei seg fault: le funzioni init* inizializzavano delle variabili LOCALI spin e weight, e non i member Lattice::spin e Lattice::weight! Tuttavia non è possibile correggere in modo banale: il compilatore proibisce la definizione o la ridichiarazione dei data member all'interno di una funzione 
+
+07-01-17(df):
+[+]Modifica della classe Lattice: rimossa la keyword const al vettore weight per risolvere il problema di inizializzazione; ora il costruttore dichiara tutti i membri della classe e li inizializza a zero, dopo di che le funzioni init* provvedono al riempimento (con un controllo per evitare doppi tentativi di inizializzazione!)
+
+[+]Corretto un errore nel costruttore: Lattice(N) inizializza un reticolo con N spin in ogni lato, in modo da avere sempre un quadrato;
+
+[+]Corretto un errore nell'uso di strncmp: if(strncmp()) ---> if(strncmp() == 0)
+
+[+]Le funzioni getter per dimension e coord_number vengono rinominate e rese disponibili all'utente finale;
+
+[!]Nel file ising2D viene rinominata la funzione usata per il test della classe lattice: test_lattice(); viene aggiunta l'utility index(int, int,int) per facilitare i test; la classe passa tutti i test finora svolti;
+
+09-01-17(df)
+[-]Si comincia a implementare la classe IsingModel che gestisce le istanze di simulazione tramite MCMC; La struttura della classe fa rifermento ad una prima idea di modifica della classe Lattice che sfrutti l'ereditarietà per semplificare l'eventuale estensione del programma, di seguito schematizzata:
+class Graph <--(Is a)-- class Lattice (e questo permette di estendere le simulazioni a grafi generici) 
+inoltre si potrebbe costruire una classe SpinNode, per sostituire i vector<int> che rappresentano gli spin all'interno del grafo (per ora, nella classe Lattice); in questo modo si potrebbero creare dei controlli più stringenti sulle variabili di spin e implementare il metodo flip a questo livello (in questo modo, si faciliterebbe l'estensione a modelli più complessi, tipo XY: basta cambiare la classe spin e creare un oggetto XYModel che implementi l'hamiltoniana corretta; 
+Per questo stesso motivo, la classe IsingModel viene scorporata come:
+SimulationModel<--(Is a)--IsingModel; così l'unica funzione da reimplementare in una estensione è l'hamiltoniana;
+
+[-]Implementazione delle funzioni hamiltonian() e simulate() della classe IsingModel
+
+[-]Prima versione compilata correttamente; nessun test effettuato 
+
+
+
