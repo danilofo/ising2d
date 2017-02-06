@@ -41,7 +41,56 @@ double quadratic(double *x, double *par)
       return result;
    }
 
-int simulate_ising( const char * outfilename1, const char * outfilename2, unsigned long int max_mcs = 0)
+
+int calibrate_ising(unsigned int max_mcs, const char * outfilename1){
+
+	unsigned int max_side_dim=20; //declare the size of the lattice, via its side length
+	unsigned int lattice_dim= max_side_dim*max_side_dim; //coincide with the size of a mcs
+	cout<<"[+]Metropolis Monte Carlo simulation of a 2D Ising model."<<endl;
+	cout<<"[+]Creating the run manager for the simulation..."<<endl;
+	IsingModel *ising_model = new IsingModel(max_side_dim );  //initial size represents the maximum size allowed
+
+
+	TH1D* magn_vs_time=NULL; //create an histogram to display
+	magn_vs_time= new TH1D ("histCalibration","Magnetization vs MCS",max_mcs,0,max_mcs);
+	magn_vs_time->SetDirectory(0); //because we want the output still shown when the file will be closed
+
+	//Convergence time (MCS) computed (UPPER BOUND) near theoretic T_C // see Landau, Binder for motivations
+	cout<<"[+]Calibration procedure for a L*L lattice started."<<endl;
+	cout<<"   It will compute the convergence time of the Metropolis algorithm for a lattice with maximum L="<<max_side_dim<<endl;
+	cout<<"   Using a greater L in the simulation can result in unreliable measurements."<<endl;
+
+	vector<double> magnetization(max_mcs);
+	double beta_c = 0.44; // note that this is computed for k_b=1 and J=1, T_C = 2.269
+	int reached_convergence=0;
+	//simulate the convergence
+	for (unsigned i=0; i <max_mcs; i++)
+	{	if(i%100==0)cout<<"[+]MonteCarlo steps performed:"<<(i)<<"/"<<max_mcs<<"..."<<endl;
+		ising_model->simulate(beta_c,lattice_dim); //1 mcs
+		magnetization[i]=ising_model->getMagnetization();
+	}
+	cout<<"[+]Creating histogram"<<endl;
+	new TCanvas() ;
+	cout<<"[+]Populating histogram"<<endl;
+	for (unsigned i=0; i<max_mcs; i++)
+	{
+		magn_vs_time->AddBinContent(i, magnetization[i]);
+	}
+	cout<<"[+]Drawing the histogram..."<<endl;
+	new TCanvas();
+	magn_vs_time->Draw();
+	cout<<"Recreating the file "<<outfilename1<<"..."<<endl;
+	TFile out_root(outfilename1,"recreate", "Ising simulation results");
+	cout<<"[+]Saving..."<<endl;
+	magn_vs_time->Write(); //write histogram to file
+	cout<<"[+]Closing the file"<<endl;
+	out_root.Close();
+	cout<<"[+]The histogram has been saved to a file."<<endl;
+
+	return 1;
+}
+
+int simulate_ising(const char * outfilename1, const char * outfilename2, unsigned long int max_mcs = 0)
 {	//User program; writes results to a file resp. in ROOT / raw numerical format
 
 	//Ising model:
@@ -60,49 +109,14 @@ int simulate_ising( const char * outfilename1, const char * outfilename2, unsign
 
 	//1. Ising model simulation
 
+	//TODO: add timing!
+
 	unsigned int max_side_dim=20; //declare the size of the lattice, via its side length
 	unsigned int lattice_dim= max_side_dim*max_side_dim; //coincide with the size of a mcs
 	cout<<"[+]Metropolis Monte Carlo simulation of a 2D Ising model."<<endl;
 	cout<<"[+]Creating the run manager for the simulation..."<<endl;
 	IsingModel *ising_model = new IsingModel(max_side_dim );  //initial size represents the maximum size allowed
-	cout<<"Recreating the file "<<outfilename1<<"..."<<endl;
-	TFile out_root(outfilename1,"recreate", "Ising simulation results");
 
-	/////////////////////////////////////////////////////////////
-	//START CALIBRATION
-	if(max_mcs==0)
-	{
-		//Convergence time (MCS) computed (UPPER BOUND) near theoretic T_C // see Landau, Binder for motivations
-		cout<<"[+]Calibration procedure for a L*L lattice started."<<endl;
-		cout<<"    It will compute the convergence time of the Metropolis algorithm for a lattice with maximum L="<<max_side_dim<<endl;
-		cout<<"    Using a greater L in the simulation can result in unreliable measurements."<<endl;
-		max_mcs= 2500; //new max number of mcs
-		vector<double> magnetization(max_mcs);
-		double beta_c = 0.44; // note that this is computed for k_b=1 and J=1, T_C = 2.269
-		int reached_convergence=0;
-		//simulate the convergence
-		for (unsigned i=0; i <max_mcs; i++)
-		{	if(i%100==0)cout<<"[+]MonteCarlo steps performed:"<<(i)<<"/"<<max_mcs<<"..."<<endl;
-			ising_model->simulate(beta_c,lattice_dim); //1 mcs
-			magnetization[i]=ising_model->getMagnetization();
-		}
-		cout<<"[+]Creating histogram"<<endl;
-		new TCanvas() ;
-		TH1D *magn_vs_time = new TH1D("histCalibration","Magnetization vs MCS",max_mcs,0,max_mcs); //create an histogram to display
-		cout<<"[+]Populating histogram"<<endl;
-		for (unsigned i=0; i<max_mcs; i++)
-		{
-			magn_vs_time->AddBinContent(i, magnetization[i]);
-		}
-		cout<<"[+]Drawing the histogram..."<<endl;
-		new TCanvas();
-		magn_vs_time->Draw();
-		cout<<"[+]Saving..."<<endl;
-		magn_vs_time->Write(); //write histogram to file
-		cout<<"[+]The histogram has been saved to a file.";
-		cout<<"[!]Insert the maximum number of MonteCarlo step resulting from calibration:"<<endl;
-		cin>>max_mcs;
-	}
 
 	//The next step of the programme is to evaluate the
 	//T_C; we will compute an array of Binder's cumulant at various temperatures in (0.2,infinity)
@@ -220,8 +234,9 @@ int simulate_ising( const char * outfilename1, const char * outfilename2, unsign
 		criticalT[i]=fit_f->GetX(0,0,5) ; //revert inverse temp
 	}
 	cout<<"[+]Computing critical temperature T_c using the Binder's cumulant; "<<endl;
-	cout<<"    The following values are the estimates for T_c (in growing order of reliability)"<<endl;
-	cout<<"    The reference value is the fit of the Binder's cumulant for L="<<length_list[list_size-1]<<endl;
+
+	cout<<"   The following values are the estimates for T_c (in growing order of reliability)"<<endl;
+	cout<<"   The reference value is the fit of the Binder's cumulant for L="<<length_list[list_size-1]<<endl;
 	for(unsigned i=0; i< list_size-1; i++) cout<<"    T_c(L="<<length_list[i]<<")="<<criticalT[i]<<endl;
 
 	//TODO:
@@ -231,7 +246,7 @@ int simulate_ising( const char * outfilename1, const char * outfilename2, unsign
 
 
 	//TODO: raw output file close
-	out_root.Close();
+
 	return 0;
 
 }
