@@ -6,58 +6,39 @@
  */
 #include "IsingModel.h"
 
+
 //implementazione della classe
 ClassImp(IsingModel)
 
 //public constructors
-IsingModel::IsingModel(): coupling(0),lattice(),M(0),E(0),Rnd(){}
-IsingModel::IsingModel(vec_sz length, double J, const char* type): coupling(J),
-		lattice(),M(0.),E(0.),Rnd(){
-	//initiallize
-	//TODO: CHECK THIS !
-	this->Rnd = new TRandom3(123); //TODO: fix the seed choice
-	this->lattice = Lattice(length,Rnd);
-	this->E=this->hamiltonian();
-	vd_sz N = length*length; 
-	//initial value of magnetization
-	for (vec_sz i=1; i<N; i++) (this->M)+=(this->lattice.spin_value(i)/N);
-}
-IsingModel::~IsingModel(){
-	delete Rnd;
-}
-//Utilities
-void IsingModel::resetLattice(){
-	this->lattice.reset();
-}
-void IsingModel::newLattice(vec_sz new_length){
-	this->lattice = Lattice(new_length, Rnd);
-}
+
+
 //functions needed to simulate
 const double IsingModel::hamiltonian()
 {
-	double H=0;
-	const vec_sz N = this->lattice.get_dimension();
-	for(vec_sz i=0; i<N ; i++)
-	{
-		const vector<vec_sz> neighs_i=this->lattice.neighbors(i);
-		const unsigned q = this->lattice.get_coord_number();
-		for(unsigned j=0; j<q; j++)
-		{
-			//compute the hamiltonian; since the graph is not directed, each node appear twice
-			//in the neighbors list; to speed up the computation we use only nodes with j>i instead
-			//of dividing the result by 2
-			if(neighs_i[j]>i) H+= this->coupling * this->lattice.spin_value(neighs_i[j]);
-		}
-	}
-	return H;
+    double H=0;
+    const vec_sz N = this->lattice.get_dimension();
+    for(vec_sz i=0; i<N ; i++)
+    {
+        const vector<vec_sz> neighs_i=this->lattice.neighbors(i);
+        const unsigned q = this->lattice.get_coord_number();
+        for(unsigned j=0; j<q; j++)
+        {
+            //compute the hamiltonian; since the graph is not directed, each node appear twice
+            //in the neighbors list; to speed up the computation we use only nodes with j>i instead
+            //of dividing the result by 2
+            if(neighs_i[j]>i) H+= this->coupling * this->lattice.spin_value(neighs_i[j]);
+        }
+    }
+    return H;
 }
 
 const double IsingModel::getMagnetization() const {
-	return this->M;
+    return this->M;
 }
 
 const double IsingModel::getEnergy() const {
-	return this->E;
+    return this->E;
 }
 
 void IsingModel::simulate(double beta, //inverse temperature

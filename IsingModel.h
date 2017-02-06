@@ -12,6 +12,7 @@
 #ifndef ISINGMODEL_H_
 #define ISINGMODEL_H_
 #include "Lattice.h"
+#include "SimulationModel.h"
 #include <algorithm>
 
 typedef std::vector<int>::size_type vec_sz;
@@ -26,16 +27,9 @@ class IsingModel: public TObject {
 	~IsingModel();
 
 	//simulation
-	//ALL FUNCTIONS HERE SHOULD IGNORE THE TYPE OF GRAPH
-	//HOW TO DO THE SAME FOR THE HAMILTONIAN?
-	void simulate(double beta, unsigned n_iterations=1000);
 	const double hamiltonian();
-	void resetLattice(); //reset lattice function
-	void newLattice(vec_sz new_length); // new lattice;
-
-
-	const double getEnergy() const;
-	const double getMagnetization() const;
+	
+//devo aggiungere la funzione che mi dice di quanto è variata l'hamiltoniana
 
 	private:
 	//The default construction of a Lattice object should be replaced with a Graph object!
