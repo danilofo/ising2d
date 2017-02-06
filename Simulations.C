@@ -41,6 +41,7 @@ double quadratic(double *x, double *par)
       return result;
    }
 
+
 int calibrate_ising(unsigned int max_mcs, const char * outfilename1){
 
 	unsigned int max_side_dim=20; //declare the size of the lattice, via its side length
@@ -107,17 +108,15 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 	/////////////////////////////////////////////////////////////////
 
 	//1. Ising model simulation
+
 	//TODO: add timing!
+
 	unsigned int max_side_dim=20; //declare the size of the lattice, via its side length
 	unsigned int lattice_dim= max_side_dim*max_side_dim; //coincide with the size of a mcs
 	cout<<"[+]Metropolis Monte Carlo simulation of a 2D Ising model."<<endl;
 	cout<<"[+]Creating the run manager for the simulation..."<<endl;
 	IsingModel *ising_model = new IsingModel(max_side_dim );  //initial size represents the maximum size allowed
 
-	TH1D* magn_vs_time=NULL; //create an histogram to display
-
-	/////////////////////////////////////////////////////////////
-	//START CALIBRATION
 
 	//The next step of the programme is to evaluate the
 	//T_C; we will compute an array of Binder's cumulant at various temperatures in (0.2,infinity)
@@ -235,6 +234,7 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 		criticalT[i]=fit_f->GetX(0,0,5) ; //revert inverse temp
 	}
 	cout<<"[+]Computing critical temperature T_c using the Binder's cumulant; "<<endl;
+
 	cout<<"   The following values are the estimates for T_c (in growing order of reliability)"<<endl;
 	cout<<"   The reference value is the fit of the Binder's cumulant for L="<<length_list[list_size-1]<<endl;
 	for(unsigned i=0; i< list_size-1; i++) cout<<"    T_c(L="<<length_list[i]<<")="<<criticalT[i]<<endl;
@@ -246,6 +246,7 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 
 
 	//TODO: raw output file close
+
 	return 0;
 
 }
