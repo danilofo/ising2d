@@ -16,13 +16,14 @@
 #include <TRandom3.h> //A ROOT library for pseudo-random number
 #include "Riostream.h"
 #include <vector>
-#include "Spin2.0.h"
+#include "Spin.h"
 
 using namespace std;
 typedef vector<int>::size_type vec_sz; //define a name for the type of the size of vector<int>
 typedef vector<Spin>::size_type vd_sz; //TODO: substitute vec_sz -> vd_sz for vector<double>
 
-class Graph: public TObject {
+class Graph: public TObject
+{
 
 	public:
 	Graph(vd_sz =0, TRandom3* =NULL);
@@ -53,7 +54,7 @@ class Graph: public TObject {
 
 	TRandom3* Rnd;
 
-	private:
+
 	vd_sz dimension; // For the use of size_t instead of unsigned int
 					//see e.g. http://stackoverflow.com/questions/1951519/when-should-i-use-stdsize-t
 

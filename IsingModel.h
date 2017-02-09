@@ -17,30 +17,29 @@
 
 typedef std::vector<int>::size_type vec_sz;
 
-class IsingModel: public TObject {
+class IsingModel: public SimulationModel {
 	//An Ising Model defined on a lattice (class Lattice)
 
 	public:
 	//public constructors
 	IsingModel();
-	IsingModel(vec_sz length, double J=1., const char* type="lattice" );
+	IsingModel(vec_sz length, double J=1.);
 	~IsingModel();
 
 	//simulation
 	const double hamiltonian();
-	
-//devo aggiungere la funzione che mi dice di quanto è variata l'hamiltoniana
+	const double energyVar(double old_val, double new_val);
+
+	//actions on the lattice
+    void resetGraph(); //
+    void newGraph(vec_sz N); //
 
 	private:
-	//The default construction of a Lattice object should be replaced with a Graph object!
-	//At runtime the constructor IsingModel should assign the correct object;
-	Lattice lattice;
+    Lattice* lattice;
 	const double coupling;
 
-	double E;//current energy
-	double M; //current magnetization
 
-	TRandom* Rnd;
+
 	ClassDef(IsingModel,1); //Used by to define a class ROOT
 
 };

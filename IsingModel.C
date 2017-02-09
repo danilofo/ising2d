@@ -5,96 +5,63 @@
  *      Author: danilo
  */
 #include "IsingModel.h"
+#include "SimulationModel.h"
 
 
 //implementazione della classe
 ClassImp(IsingModel)
 
 //public constructors
+IsingModel::IsingModel(vec_sz length, double J): SimulationModel(),lattice(NULL),coupling(J)
+{
+	//initialize
+	//cout<<"[D]IsingModel: constructing TRandom3 Rnd...";
+	this->Rnd = new TRandom3(823); //TODO: fix the seed choice
+	//cout<<"[D]IsingModel: Rnd...completed"<<endl;
+	//cout<<"[D]IsingModel: constructing Lattice lattice...";
+	this->lattice = new Lattice(length,Rnd);
+	this->graph = this->lattice;
+	//cout<<"[D]IsingModel: lattice...completed"<<endl;
+	//cout<<"[D]IsingModel: computing initial energy...";
+	this->E=this->hamiltonian();
+	//cout<<"[D]IsingModel: hamiltonian...completed"<<endl;
+	vd_sz N = length*length;
+	//initial value of magnetization
+	for (vec_sz i=1; i<N; i++)
+		(this->M)+=(this->lattice->getNodeValue(i)/N);
 
-
+	//cout<<"[D]IsingModel:Construction completed"<<endl;
+}
 //functions needed to simulate
 const double IsingModel::hamiltonian()
 {
     double H=0;
-    const vec_sz N = this->lattice.get_dimension();
+    const vec_sz N = this->lattice->getDimension();
     for(vec_sz i=0; i<N ; i++)
     {
-        const vector<vec_sz> neighs_i=this->lattice.neighbors(i);
-        const unsigned q = this->lattice.get_coord_number();
+        const vector<vec_sz> neighs_i=this->lattice->neighbors(i);
+        const unsigned q = this->lattice->getCoordN() ;
         for(unsigned j=0; j<q; j++)
         {
             //compute the hamiltonian; since the graph is not directed, each node appear twice
             //in the neighbors list; to speed up the computation we use only nodes with j>i instead
             //of dividing the result by 2
-            if(neighs_i[j]>i) H+= this->coupling * this->lattice.spin_value(neighs_i[j]);
+            if(neighs_i[j]>i) H+= this->coupling * this->lattice->getNodeValue(neighs_i[j]);
         }
     }
     return H;
 }
 
-const double IsingModel::getMagnetization() const {
-    return this->M;
+const double energyVar(double old_val, double new_val){
+	return (-2.)*(old_val);
 }
 
-const double IsingModel::getEnergy() const {
-    return this->E;
+void resetGraph(){
+	this->lattice->reset();
 }
-
-void IsingModel::simulate(double beta, //inverse temperature
-		unsigned n_iterations)
-//Metropolis Monte Carlo simulation of a model defined by an hamiltonian on a generic graph;
-//Randomly choose a spin to flip; accept the change in the configuration according to the Metropolis choice
-{
-	double magnetization = this->M ;
-	double H0 = this->E; //energy of the current distribution
-	if(beta < 0){
-		cout<<"[!]Invalid inverse temperature, must be greater than zero."<<endl;
-	}
-	else
-	{
-		//initialization
-		vd_sz N = this->lattice.get_dimension(); //total number of spin 
-		double NewH=0; //energy of the proposed distribution
-		vec_sz index =0;
-		double delta=0;
-		double acceptance=0;
-		double boltz=0;
-		double spin_value_i0=0;
-
-		//loop until n_iterations is reached
-		for(unsigned i=1; i<n_iterations; i++)
-		{
-			index= Rnd->Integer(N);
-			//proposal
-			spin_value_i0=this->lattice.spin_value(index);
-			this->lattice.flip(index);
-			NewH=this->hamiltonian();
-			delta=H0-NewH;//negative if NewH>H0;energy improvements should always be accepted!
-			boltz=std::exp( beta * delta );
-			acceptance = std::min(1.0, boltz);
-			//metropolis choice
-			if (acceptance==1)
-			{
-				H0+=delta;
-				magnetization-= 2.0*spin_value_i0/N; //THIS DEPENDS ON THE HAMILTONIAN !
-				//Maybe can be handled by a function of IsingModel newMagnetization(oldSpin, newSpin)
-			}
-			else
-			{
-				if(Rnd->Rndm()<acceptance )
-				{
-					H0+=delta;
-					magnetization-= 2*spin_value_i0/N;
-				}
-				else this->lattice.flip(index);
-			}
-		}
-	}
-	//assignment of final energy / magn
-	this->M=magnetization;
-	this->E=H0;
-	return;
+virtual void newGraph(vec_sz N){
+	this->lattice = new Lattice(N,Rnd);
+	this->graph = this->lattice;
 }
 
 

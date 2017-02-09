@@ -1,4 +1,4 @@
-#include "Lattice2.0.h"
+#include "Lattice.h"
 
 //implementazione della classe
 ClassImp(Lattice)
@@ -32,6 +32,9 @@ Graph(N*N,rnd),lenght(N),coord_number(q)
 	}
 }
 
+const unsigned Lattice::getCoordN(){
+	return this->coord_number;
+}
 
 //initialization procedures:
 void Lattice::initSpins(const char * flag)

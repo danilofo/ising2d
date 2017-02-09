@@ -4,7 +4,7 @@
  *  Created on: 08 gen 2017
  *      Author: danilo
  */
-#include "Spin2.0.h"
+#include "Spin.h"
 #include "iostream"
 
 

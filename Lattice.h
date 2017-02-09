@@ -11,7 +11,7 @@
 #define LATTICE_H_
 
 
-#include "Graph2.0.h"
+#include "Graph.h"
 
 
 class Lattice: public Graph {
@@ -30,10 +30,9 @@ class Lattice: public Graph {
 		//Functionalities
 		void flip(const vec_sz ); //flip the i-th node
 		const vector<vec_sz> neighbors( const vec_sz ) ; //returns an array with neighbors' index
-
 		void reset(const char * flag="random");
 
-
+		const unsigned getCoordN();
 	private:
 		//Data members
 		vec_sz lenght;

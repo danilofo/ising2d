@@ -5,7 +5,7 @@
  *      Author: danilo
  */
 
-#include "Graph2.0.h"
+#include "Graph.h"
 
 Graph::Graph(vd_sz d, TRandom3* rnd): dimension(d), Rnd(rnd),spin(d,0),weight(d*d,0){}
 
