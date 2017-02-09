@@ -1,14 +1,13 @@
-#include "Lattice.h"
+#include "Lattice2.0.h"
 
 //implementazione della classe
 ClassImp(Lattice)
 
-
 //constructors
-Lattice::Lattice(): lenght(0),dimension(0),coord_number(0),spin(),weight(),Rnd(NULL){}
+Lattice::Lattice(): lenght(0),coord_number(0){}
 
-Lattice::Lattice(int N, TRandom* rnd,int q, const char *flag):  lenght(N),dimension(N*N),
-		coord_number(q),spin(N*N,0),weight(N*N*N*N,0), Rnd(rnd)
+Lattice::Lattice(int N, TRandom3* rnd,int q, const char *flag):
+Graph(N*N,rnd),lenght(N),coord_number(q)
 {	//Construct a lattice with N spin IN EACH ROW/COLUMN
 	if (N<1 )
 	{
@@ -34,83 +33,49 @@ Lattice::Lattice(int N, TRandom* rnd,int q, const char *flag):  lenght(N),dimens
 }
 
 
-//utilities
-const vec_sz Lattice::index(const vec_sz x, const vec_sz y) const
-{	//Return the correct index for 1d representation of 2d matrices; do not change data members
-	//See http://stackoverflow.com/questions/936687/how-do-i-declare-a-2d-array-in-c-using-new
-	const vec_sz &n_rows = this->dimension;
-	return  x + n_rows* y;
-}
-
-//Public getter functions
-vec_sz Lattice::get_dimension()
-{	vec_sz N = this->dimension;
-	return N;
-	}
-unsigned int Lattice::get_coord_number()
-{	unsigned int q = this->coord_number;
-	return q;
-	}
-
-// DEBUG ONLY FUNCTIONS
-vector<double> Lattice::dbg_get_spin()
-	{
-	vector<double> result(this-> spin);
-	return result;}
-vector<int> Lattice::dbg_get_weight()
-{
-	vector<int> result(this->weight);
-	return result;
-	}
-
-
 //initialization procedures:
 void Lattice::initSpins(const char * flag)
 //Initialize the value of each spin ; choice allowed are
 //"random" or "ordered". The latter means that all spins are assigned to +1
-{	const vector<double> test_vc(this->dimension,0);
-	if (test_vc==spin ) //protect against re-initializations AND prevent assignment of spin
-	{
-		//const vec_sz mat_dim = this->dimension*this->dimension; //Read dimension
-		//vector<int> Lattice::spin(this->dimension); //Declare and allocate the spin array
-
-		if (strncmp(flag,"random",10)==0)
-		{
-			for(unsigned i=0; i<this->dimension; i++) //initialize a matrix using a single for loop
-			{
-				this->spin[i]= (Rnd->Rndm() < 0.5) ? -1 : 1 ; //assign the value +1 with probability 0.5
-			}
-		}
-
-		else if (strncmp(flag,"ordered",10)==0)
-		{	for(unsigned i=0; i<this->dimension; i++)
-			{
-				this->spin[i]=1;
-			}
-		}
-		else
-		{
-			cout<<"[!]Initialization failed. Admitted choices : \"random\", \"ordered\" "<<endl;
-		}
-	}
-	else{cout<<"[!]Re-initialization attempt ignored"<<endl;}
-}
-
-void Lattice::reset(const char* flag)
-{
+{	const vec_sz N = this->getDimension();
 	if (strncmp(flag,"random",10)==0)
 	{
-		for(unsigned i=0; i<this->dimension; i++) //initialize a matrix using a single for loop
+		for(vec_sz i=0; i<N; i++)
 		{
-			this->spin[i]= (Rnd->Rndm() < 0.5) ? -1 : 1 ; //assign the value +1 with probability 0.5
+			if(Rnd->Rndm() < 0.5) this->spin[i].setSpinUp();
+			else this->spin[i].setSpinDown();
 		}
 	}
 
 	else if (strncmp(flag,"ordered",10)==0)
-	{	for(unsigned i=0; i<this->dimension; i++)
+	{	for(vec_sz i=0; i<N; i++)
 		{
-			this->spin[i]=1;
+			this->spin[i].setSpinUp();
 		}
+	}
+	else
+	{
+		cout<<"[!]Initialization failed. Admitted choices : \"random\", \"ordered\" "<<endl;
+	}
+
+}
+
+void Lattice::reset(const char* flag)
+{	const vd_sz N = this->getDimension();
+	if (strncmp(flag,"random",10)==0)
+	{
+		for(vec_sz i=0; i<N; i++)
+				{
+					if(Rnd->Rndm() < 0.5) this->spin[i].setSpinUp();
+					else this->spin[i].setSpinDown();
+				}
+	}
+
+	else if (strncmp(flag,"ordered",10)==0)
+	{	for(vec_sz i=0; i<N; i++)
+	{
+		this->spin[i].setSpinUp();
+	}
 	}
 	else
 	{
@@ -123,7 +88,7 @@ void Lattice::reset(const char* flag)
 void Lattice::initRectangularLattice()
 {
 
-	const vec_sz &N = this->dimension;
+	const vd_sz N = this->getDimension();
 	const vec_sz &L = this->lenght;
 	const vector<int> test_vc(N*N,0);
 	if(test_vc==this->weight)
@@ -136,10 +101,20 @@ void Lattice::initRectangularLattice()
 			//of the currently selected node. Since the assignment is symmetric,
 			//we only assign 2 neighbors at each iteration.
 			//The other 2 are assigned when the top or left nodes are selected.
-			this->weight[index((i+1)%N,i)] = 1;
-			this->weight[index(i,(i+1)%N)] = 1;
-			this->weight[index((i+L)%N,i)] = 1;
-			this->weight[index(i,(i+L)%N)] = 1;
+			if( (i+1)%L ==0)  //end of row
+			{
+				this->weight[Lattice::index((i+1-L) ,i)] = 1;
+				this->weight[Lattice::index(i,(i+1-L))] = 1;
+				this->weight[Lattice::index((i+L)%N,i)] = 1;
+				this->weight[Lattice::index(i,(i+L)%N)] = 1;
+			}
+			else{
+				this->weight[Lattice::index((i+1),i)] = 1;
+				this->weight[Lattice::index(i,(i+1))] = 1;
+				this->weight[Lattice::index((i+L)%N,i)] = 1;
+				this->weight[Lattice::index(i,(i+L)%N)] = 1;
+			}
+
 		}
 	}
 	else{cout<<"[!]Re-initialization attempt ignored"<<endl;}
@@ -148,21 +123,21 @@ void Lattice::initRectangularLattice()
 
 //class functionalities:
 void Lattice::flip(const vec_sz i)
+{
+	const vd_sz N = this->getDimension();
+	if(i>N-1)
 	{
-		const vec_sz &N = this->dimension;
-		if(i>N-1)
-		{
-			cout<<"Node "<<i<<" is not in the lattice (dimension="<<N<<")"<<endl;
-		}
-		else{
-			this->spin[i]-=2*this->spin[i];
-		}
+		cout<<"Node "<<i<<" is not in the lattice (dimension="<<N<<")"<<endl;
 	}
+	else{
+		this->spin[i].flipSpin();
+	}
+}
 
-const vector<vec_sz> Lattice::neighbors( const vec_sz i) const
+const vector<vec_sz> Lattice::neighbors( const vec_sz i)
 {
 	const unsigned int &q = this->coord_number;
-	const vec_sz &N = this->dimension;
+	const vd_sz N = getDimension();
 
 	if (i>N-1) //check if i is in the lattice
 	{
@@ -186,16 +161,7 @@ const vector<vec_sz> Lattice::neighbors( const vec_sz i) const
 		}
 		return neighs;
 	}
-
 }
 
-const double Lattice::spin_value(const vd_sz i) //return the state of an individual spin
-{	double spin_i=0;
-	const vec_sz &N=this->dimension;
-	if(i<N)spin_i= this->spin[i];
-	else cout<<"[!] Node "<<i<<" is not in the graph"<<endl;
-
-	return spin_i;
-}
 
 
