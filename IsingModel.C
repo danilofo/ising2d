@@ -12,6 +12,7 @@
 ClassImp(IsingModel)
 
 //public constructors
+
 IsingModel::IsingModel(vec_sz length, double J): SimulationModel(),lattice(NULL),coupling(J)
 {
 	//initialize
@@ -29,9 +30,10 @@ IsingModel::IsingModel(vec_sz length, double J): SimulationModel(),lattice(NULL)
 	//initial value of magnetization
 	for (vec_sz i=1; i<N; i++)
 		(this->M)+=(this->lattice->getNodeValue(i)/N);
-
-	//cout<<"[D]IsingModel:Construction completed"<<endl;
 }
+
+IsingModel::~IsingModel(){if(this->lattice!=NULL) delete this->lattice; }
+
 //functions needed to simulate
 const double IsingModel::hamiltonian()
 {
@@ -52,15 +54,15 @@ const double IsingModel::hamiltonian()
     return H;
 }
 
-const double energyVar(double old_val, double new_val){
+const double IsingModel::energyVar(double old_val, double new_val){
 	return (-2.)*(old_val);
 }
 
-void resetGraph(){
+void IsingModel::resetGraph(){
 	this->lattice->reset();
 }
-virtual void newGraph(vec_sz N){
-	this->lattice = new Lattice(N,Rnd);
+void IsingModel::newGraph(vec_sz N){
+	this->lattice = new Lattice(N,this->Rnd);
 	this->graph = this->lattice;
 }
 

@@ -24,7 +24,6 @@ class Lattice: public Graph {
 		//Member functions:
 
 		// public constructors
-		Lattice();
 		Lattice(int ,TRandom3* , int q=4,const char * flag="random");
 
 		//Functionalities

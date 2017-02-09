@@ -4,7 +4,7 @@
 ClassImp(Lattice)
 
 //constructors
-Lattice::Lattice(): lenght(0),coord_number(0){}
+
 
 Lattice::Lattice(int N, TRandom3* rnd,int q, const char *flag):
 Graph(N*N,rnd),lenght(N),coord_number(q)

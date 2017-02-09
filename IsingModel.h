@@ -15,14 +15,12 @@
 #include "SimulationModel.h"
 #include <algorithm>
 
-typedef std::vector<int>::size_type vec_sz;
 
 class IsingModel: public SimulationModel {
 	//An Ising Model defined on a lattice (class Lattice)
 
 	public:
 	//public constructors
-	IsingModel();
 	IsingModel(vec_sz length, double J=1.);
 	~IsingModel();
 
@@ -37,8 +35,6 @@ class IsingModel: public SimulationModel {
 	private:
     Lattice* lattice;
 	const double coupling;
-
-
 
 	ClassDef(IsingModel,1); //Used by to define a class ROOT
 
