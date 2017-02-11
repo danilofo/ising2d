@@ -5,35 +5,35 @@
  *      Author: danilo
  */
 #include "SimulationModel.h"
+#include "Riostream.h"
+using namespace std; 
 
 //implementazione della classe
 ClassImp(SimulationModel)
-
-
 //public constructors
 SimulationModel::SimulationModel():graph(NULL),M(0),E(0),Rnd(NULL){}
-
 SimulationModel::~SimulationModel(){
+	//TRandom3* Rnd is created in this class, so the destructor deletes it.
+	//The pointer Graph* graph, instead, is assigned to an object only in the
+	//derived class, so it should not be deleted.
     if(Rnd!=NULL) delete Rnd;
-    if(graph!=NULL) delete graph;
 }
-
-
-const double SimulationModel::getMagnetization() const {
-	return this->M;
-}
-
-const double SimulationModel::getEnergy() const {
-	return this->E;
-}
-
+void SimulationModel::setEnergy(double e) {this->E=e;}
+void SimulationModel::setMagnetization(double m ) {this->M=m;}
+double SimulationModel::getMagnetization() const { 	return this->M;}
+double SimulationModel::getEnergy() const {	return this->E;}
 void SimulationModel::simulate(double beta, //inverse temperature
 		unsigned n_iterations){
-//Metropolis Monte Carlo simulation of a model defined by an hamiltonian on a generic graph;
-//Randomly choose a spin to flip; accept the change in the configuration according to the Metropolis choice
+	//Metropolis Monte Carlo simulation of a model defined by an hamiltonian on a generic graph;
+	//Randomly choose a spin to flip; accept the change in the configuration according to the Metropolis choice
 	//cout<<"[D]IsingModel:simulate started"<<endl;
-	double magnetization = this->M ;
-	double H0 = this->E; //energy of the current distribution
+	if(graph==NULL){
+		cout<<"[!]SimulationModel:simulate:invalid pointer graph received"<<endl;
+		return;
+	}
+	double magnetization = this->getMagnetization();
+	cout<<"[D]Current magn:"<<magnetization<<endl;
+	double H0 = this->getEnergy(); //energy of the current distribution
 	if(beta < 0){
 		cout<<"[!]IsingModel:Invalid inverse temperature, must be greater than zero."<<endl;
 	}
@@ -47,44 +47,40 @@ void SimulationModel::simulate(double beta, //inverse temperature
 		double acceptance=0;
 		double boltz=0;
 		double spin_value_i0=0;
-		double spin_value_i1 =0;
-
+		double spin_value_i1=0;
 		//loop until n_iterations is reached
 		for(unsigned i=1; i<n_iterations; i++)
 		{
-			//cout<<"[D]	IsingModel:Rnd called...";
 			index= Rnd->Integer(N);
 			//proposal
 			spin_value_i0=this->graph->getNodeValue(index);
-			//cout<<"[D]	IsingModel:.flip() called..."<<endl;
 			this->graph->flip(index);
-			//cout<<"[D]	IsingModel:.flip ok"<<endl;
 			spin_value_i1=this->graph->getNodeValue(index);
+			if(spin_value_i0!=(-1)*spin_value_i1) cout<<"[D] flip error"<<endl;
+			magnetization+= this->magnVar(spin_value_i0,spin_value_i1);
 			NewH=this->hamiltonian();
-			delta=H0-NewH;//negative if NewH>H0;energy improvements should always be accepted!
+			delta=H0-NewH;//negative if NewH>H0; improvements should always be accepted!
 			boltz=std::exp( beta * delta );
 			acceptance = std::min(1.0, boltz);
 			//metropolis choice
 			if (acceptance==1)
 			{
-				H0+=delta;
-				magnetization-= this->energyVar(spin_value_i0,spin_value_i1); //THIS DEPENDS ON THE HAMILTONIAN !
-				//Maybe can be handled by a function of IsingModel newMagnetization(oldSpin, newSpin)
+				H0=NewH;
+				magnetization=this->magnVar(spin_value_i1,spin_value_i0);
 			}
 			else
 			{
 				if(Rnd->Rndm()<acceptance )
 				{
-					H0+=delta;
-					magnetization-= 2*spin_value_i0/N;
+					H0=NewH;
+					magnetization+= this->magnVar(spin_value_i1,spin_value_i0);
 				}
 				else this->graph->flip(index);
 			}
 		}
 	}
 	//assignment of final energy / magn
-	this->M=magnetization;
-	this->E=H0;
-
+	this->setMagnetization(magnetization);
+	this->setEnergy(H0);
 	return;
 }

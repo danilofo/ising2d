@@ -20,21 +20,20 @@ class Lattice: public Graph {
 	//the class gives access to each node in the lattice and provides a neighbors' list for each of them
 
 	public:
-
 		//Member functions:
 
 		// public constructors
 		Lattice(int ,TRandom3* , int q=4,const char * flag="random");
-
+		~Lattice();
+		
 		//Functionalities
-		void flip(const vec_sz ); //flip the i-th node
-		const vector<vec_sz> neighbors( const vec_sz ) ; //returns an array with neighbors' index
-		void reset(const char * flag="random");
-
-		const unsigned getCoordN();
+		virtual void flip(const vd_sz ); //flip the i-th node
+		virtual const vector<vd_sz> neighbors( const vd_sz ) ; //returns an array with neighbors' index
+		virtual void reset(const char * flag="random");
+		unsigned getCoordN();
 	private:
 		//Data members
-		vec_sz lenght;
+		vd_sz length;
 		unsigned int coord_number;
 
 		//Private member functions:

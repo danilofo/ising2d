@@ -9,35 +9,42 @@
 
 #ifndef SIMULATIONMODEL_H_
 #define SIMULATIONMODEL_H_
-#include <algorithm>
 
+#include <algorithm>
 #include "Graph.h"
 
-
 typedef std::vector<int>::size_type vec_sz;
+typedef vector<Spin>::size_type vd_sz;
 
-class SimulationModel: public TObject {
+class SimulationModel//: public TObject
+{
     // classe in cui definisco il grafo
     
     public:
 	SimulationModel();
-	~SimulationModel();
+	virtual ~SimulationModel();
 
 	//
     void simulate(double beta, unsigned n_iterations=1000);
-    virtual const double hamiltonian()=0;
-    virtual const double energyVar(double old_val, double new_val)=0;
+    virtual double hamiltonian()=0;
+    virtual double magnVar(double old_val, double new_val)=0;
 
     //Actions on graph
     virtual void resetGraph()=0; //
-    virtual void newGraph(vec_sz N)=0; //
+    virtual void newGraph(vd_sz ,const char*)=0; //
 
-    const double getEnergy() const ;
-    const double getMagnetization() const;
+    double getEnergy() const ;
+    double getMagnetization() const;
     
+
+
     protected:
     Graph* graph;
 	TRandom3* Rnd;
+
+	//debug only
+    void setEnergy(double ) ;
+    void setMagnetization(double ) ;
 
 	double E;//current energy
 	double M; //current magnetization

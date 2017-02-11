@@ -13,7 +13,7 @@
 #define ISINGMODEL_H_
 #include "Lattice.h"
 #include "SimulationModel.h"
-#include <algorithm>
+
 
 
 class IsingModel: public SimulationModel {
@@ -21,20 +21,20 @@ class IsingModel: public SimulationModel {
 
 	public:
 	//public constructors
-	IsingModel(vec_sz length, double J=1.);
+	IsingModel(vec_sz length, double J=1);
 	~IsingModel();
-
 	//simulation
-	const double hamiltonian();
-	const double energyVar(double old_val, double new_val);
-
+	double magnetization();
+	virtual double hamiltonian(); //virtual qualifier here is ignored, but improves readability
+	virtual double magnVar(double old_val, double new_val);
 	//actions on the lattice
-    void resetGraph(); //
-    void newGraph(vec_sz N); //
+    virtual void resetGraph(); //
+    virtual void newGraph(vec_sz N,const char* flag="random"); //
 
 	private:
     Lattice* lattice;
 	const double coupling;
+	static unsigned n_instances;
 
 	ClassDef(IsingModel,1); //Used by to define a class ROOT
 

@@ -11,15 +11,16 @@
 #define SPIN_H_
 
 class Spin{
-
+//A basic data structure for spin variables
+//
 	public:
-	Spin(double=0);
+	Spin(double=0); //default value at construction time
 
+	//public methods
 	void setSpinUp();
 	void setSpinDown();
 	void flipSpin();
-
-	const double getSpinValue();
+	double getSpinValue();
 
 	private:
 	double spin;

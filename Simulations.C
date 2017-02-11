@@ -19,10 +19,10 @@
 using namespace std;
 
 //Utilities
-vec_sz idx(const vec_sz x, const vec_sz y,unsigned N)
+vec_sz idx(const vec_sz i, const vec_sz j,vec_sz N)
 {	//Return the correct index for 1d representation of 2d matrices; do not change data members
 	//See http://stackoverflow.com/questions/936687/how-do-i-declare-a-2d-array-in-c-using-new
-	return  x + N* y;
+	return  i*N+j;
 }
 
 double quadratic(double *x, double *par)
@@ -50,8 +50,7 @@ int calibrate_ising(unsigned int max_mcs, const char * outfilename1){
 	cout<<"   Using a greater L in the simulation can result in unreliable measurements."<<endl;
 
 	vector<double> magnetization(max_mcs);
-	double beta_c = 0.44; // note that this is computed for k_b=1 and J=1, T_C = 2.269
-	int reached_convergence=0;
+	double beta_c = 100; // note that this is computed for k_b=1 and J=1, T_C = 2.269
 	//simulate the convergence
 	for (unsigned i=0; i <max_mcs; i++)
 	{	if(i%100==0)cout<<"[+]MonteCarlo steps performed:"<<(i)<<"/"<<max_mcs<<"..."<<endl;
@@ -113,7 +112,7 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 
 	cout<<"[+]Starting the main simulation procedure."<<endl;
 	//Lattice side size should always be tested against max_side_dim
-	vector<unsigned> length_list={8,10,14,16,20};
+	vector<unsigned> length_list={8};
 	vec_sz list_size = length_list.size();
 	cout<<"[+]Simulating 2D Ising model on a square lattice with L*L spins "<<endl;
 	cout<<"   for the following values of L:"<<endl;
@@ -124,26 +123,27 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 				cout<<"[!]Maximum lattice size ("<<max_side_dim<<") exceeded: results could be unreliable!"<<endl;
 	double max_beta = 200.; // min temp T=5e-3
 	double min_beta = 0.; 	//max temp = infinity
-	int temp_steps=80;
+	unsigned temp_steps=80;
 	vector<double> inv_temperature(temp_steps);
 	for (int i = 0; i<temp_steps; i++ ){
 		inv_temperature[i]=min_beta+i*(max_beta-min_beta)/temp_steps;
 	}
-	//we use a 2x2 matrix representation in which binder_cumulant[index(i,j)]
+	//we used a 2x2 matrix representation in which binder_cumulant[index(i,j,N)]
 	//represents the value of the bc at temp inv_temperature[j] for the i-th lattice in lenght_list
+	//and N is the number of elements in a row
 	vector<double> binder_cumulants(list_size*temp_steps,0);
 	vec_sz bc_vec_sz = binder_cumulants.size();
 	//same for the energy fluctuations vector
 	vector<double> heat_capacity(list_size*temp_steps,0);
 	vec_sz hc_vec_sz = heat_capacity.size();
-	cout<<"[+]Run parameters correctly initialized. "<<endl;
-	//unsigned long int mcs_i = 0;
-	//unsigned long int max_steps = max_mcs* max_side_dim*max_side_dim;
+	cout<<"[+]Parameters correctly initialized. "<<endl;
+
 	vector<double> energy(max_mcs,0);
 	vector<double> magnetization(max_mcs,0);
 	for(unsigned i=0; i< list_size; i++)
 	{ 	cout<<"[+]Simulation for L="<<length_list[i]<<" started..."<<endl;
-		ising_model.newLattice(length_list[i]);
+		ising_model.newGraph(length_list[i]);
+		cout<<"[+]New graph created"<<endl;
 		for(unsigned j=0; j < temp_steps ; j++)
 		{	//mcs_i = max_mcs / (max_side_dim/length_list[i]); //integer division, this linear speed up "should not mess up"...
 			//unsigned long int max_steps_i = mcs_i*length_list[i]*length_list[i]; //total n of steps
@@ -156,6 +156,7 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 				ising_model.simulate(inv_temperature[j],length_list[i]*length_list[i]);
 				energy[k]=ising_model.getEnergy();
 				magnetization[k]=ising_model.getMagnetization();
+				if(magnetization[k]<-1) return -3;
 			}
 			//procedure to compute binder's cumulant and heat capacity
 			double m_2=0;
@@ -178,52 +179,25 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 			cout<<"m_4 "<<m_4<<" "<<"m_2 "<<m_2<<" "<<" e_2 "<<e_2<<" e_m "<<e_m<<endl;
 			binder_cumulants[idx(i,j, temp_steps)] = 1 - ( m_4/(3*m_2*m_2)); //compute the binder's cumulant for this T
 			heat_capacity[idx(i,j,temp_steps)] =inv_temperature[j]*inv_temperature[j]*(e_2-(e_m*e_m)); // compute the heat capacity(T)=k_b T^2 (var E)
-			ising_model.resetLattice(); //reset each time!
+			ising_model.resetGraph(); //reset each time!
 		}
-		cout<<"   [D]...completed."<<endl;
+		cout<<"   [+]...completed."<<endl;
 	}
 
 	cout<<"[+]Beginning procedure used to find the critical temperature:"<<endl;
 	cout<<"   quadratic fit of the Binder's cumulant obtained for beta in the range("<<min_beta<<","<<max_beta<<")"<<endl;
-	int n_fitparam=3;
-	int M=list_size*n_fitparam;
+	unsigned n_fitparam=3;
+	unsigned M=list_size*n_fitparam;
 	vector<double> fitparam_matrix(M);
 	cout<<"[D]fitparam_matrix created"<<endl;
-	//DEBUG: error here! seg fault
-	TF1 *fit_f = new TF1("fit_f",quadratic,0,5,n_fitparam); //range(0,5), 3 parameters
+
+	TF1 *fit_f = new TF1("fit_f",quadratic,0.,5.,n_fitparam); //range(0,5), 3 parameters
 	cout<<"[D]fit_f TF1 created"<<endl;
-	//DEBUG 1 iteration done by hand
-	TH1D *hfit = new TH1D("temp_hist","htemporaneo",temp_steps,0,temp_steps);
-	cout<<"[D]	Temp hist created"<<endl;
-	for(unsigned j=0; j<temp_steps; j++)
-	{
-		cout<<"[D]		Current binder's cumulant is:"<<binder_cumulants[idx(0,j,temp_steps)]<<endl;
-		double j_d=j;
-		hfit->Fill(j_d,binder_cumulants[idx(0,j,temp_steps)]);
-		//DEBUG: error should be found starting here!
-		cout<<"[D]		hfit populated!"<<endl;
-	}
-	cout<<"[D]Accessing hfit and fitting fit_f to it"<<endl;
-	hfit->Fit("fit_f");
-	cout<<"[D] Fit done"<<endl;
-	new TCanvas();
-	hfit->DrawCopy(); //DEBUG
-	cout<<"Printed"<<endl;
-	TF1 *f_i_fit = hfit->GetFunction("f_i_fit");
-	cout<<"[D] Temp fit function obtained from histogram:"<<endl;
-	for(unsigned j=0; j<n_fitparam; j++) {
-		cout<<"[D] Parameter j is"<<f_i_fit->GetParameter(j)<<endl;
-		fitparam_matrix[idx(0,j,n_fitparam)]=f_i_fit->GetParameter(j);
-	}
-	cout<<endl;
-	cout<<" Fit "<<0<<"/"<<list_size<<" completed!"<<endl;
-	if(hfit!=NULL ) delete hfit;
-	if(f_i_fit!=NULL ) delete f_i_fit;
-	cout<<"[D]Temporary pointers deleted!"<<endl;
-	/*DEBUG
+
+
 	//TODO:fitting procedure for each lattice, update fitparam_matrix
 	for (unsigned i=0; i<list_size; i++){
-		TH1D *hfit = new TH1D("temp_hist","htemporaneo",temp_steps,0,temp_steps);
+		TH1D *hfit = new TH1D("temp_hist","Binder's cumulant vs Inverse temperature",temp_steps,0,temp_steps);
 		cout<<"[D]	Temp hist created"<<endl;
 		//populate the hist
 
@@ -250,7 +224,7 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 		if(hfit!=NULL ) delete hfit;
 		if(f_i_fit!=NULL ) delete f_i_fit;
 		cout<<"[D]Temporary pointers deleted!"<<endl;
-	}*/
+	}
 
 	//once we have a fit we can approximate the  T_C finding the root of fit_i-fit_j;
 	//since this should converge with L-> infinity, we compute only fit_i-fit_4

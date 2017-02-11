@@ -1,5 +1,4 @@
 #include "Lattice.h"
-
 //implementazione della classe
 ClassImp(Lattice)
 
@@ -7,7 +6,7 @@ ClassImp(Lattice)
 
 
 Lattice::Lattice(int N, TRandom3* rnd,int q, const char *flag):
-Graph(N*N,rnd),lenght(N),coord_number(q)
+Graph(N*N,rnd),length(N),coord_number(q)
 {	//Construct a lattice with N spin IN EACH ROW/COLUMN
 	if (N<1 )
 	{
@@ -32,7 +31,9 @@ Graph(N*N,rnd),lenght(N),coord_number(q)
 	}
 }
 
-const unsigned Lattice::getCoordN(){
+Lattice::~Lattice() {}
+
+unsigned Lattice::getCoordN(){
 	return this->coord_number;
 }
 
@@ -40,10 +41,10 @@ const unsigned Lattice::getCoordN(){
 void Lattice::initSpins(const char * flag)
 //Initialize the value of each spin ; choice allowed are
 //"random" or "ordered". The latter means that all spins are assigned to +1
-{	const vec_sz N = this->getDimension();
+{	const vd_sz N = this->getDimension();
 	if (strncmp(flag,"random",10)==0)
 	{
-		for(vec_sz i=0; i<N; i++)
+		for(vd_sz i=0; i<N; i++)
 		{
 			if(Rnd->Rndm() < 0.5) this->spin[i].setSpinUp();
 			else this->spin[i].setSpinDown();
@@ -51,7 +52,7 @@ void Lattice::initSpins(const char * flag)
 	}
 
 	else if (strncmp(flag,"ordered",10)==0)
-	{	for(vec_sz i=0; i<N; i++)
+	{	for(vd_sz i=0; i<N; i++)
 		{
 			this->spin[i].setSpinUp();
 		}
@@ -67,7 +68,7 @@ void Lattice::reset(const char* flag)
 {	const vd_sz N = this->getDimension();
 	if (strncmp(flag,"random",10)==0)
 	{
-		for(vec_sz i=0; i<N; i++)
+		for(vd_sz i=0; i<N; i++)
 				{
 					if(Rnd->Rndm() < 0.5) this->spin[i].setSpinUp();
 					else this->spin[i].setSpinDown();
@@ -75,7 +76,7 @@ void Lattice::reset(const char* flag)
 	}
 
 	else if (strncmp(flag,"ordered",10)==0)
-	{	for(vec_sz i=0; i<N; i++)
+	{	for(vd_sz i=0; i<N; i++)
 	{
 		this->spin[i].setSpinUp();
 	}
@@ -92,11 +93,11 @@ void Lattice::initRectangularLattice()
 {
 
 	const vd_sz N = this->getDimension();
-	const vec_sz &L = this->lenght;
+	const vd_sz &L = this->length;
 	const vector<int> test_vc(N*N,0);
-	if(test_vc==this->weight)
+	if(test_vc==this->weight) //protect against re-initializations
 	{
-		for (unsigned i=0; i<N; i++)
+		for (vd_sz i=0; i<N; i++)
 		{
 			//this is the correct way to assign the neighborhood relation:
 			//node i is assigned neighbor of i+1 mod N and i+(node in a row) mod N,
@@ -137,7 +138,7 @@ void Lattice::flip(const vec_sz i)
 	}
 }
 
-const vector<vec_sz> Lattice::neighbors( const vec_sz i)
+const vector<vd_sz> Lattice::neighbors( const vd_sz i)
 {
 	const unsigned int &q = this->coord_number;
 	const vd_sz N = getDimension();
@@ -145,16 +146,16 @@ const vector<vec_sz> Lattice::neighbors( const vec_sz i)
 	if (i>N-1) //check if i is in the lattice
 	{
 		cout<<"[!]Node "<<i<<" is not in the lattice (dimension="<<N<<")"<<endl;
-		vector<vec_sz> neighs;
+		vector<vd_sz> neighs;
 		return neighs; //two distinct returns are needed to avoid vector neighs to go out-of-scope
 	}
 	else
 	{
-		vector<vec_sz> neighs(q) ;
+		vector<vd_sz> neighs(q) ;
 		unsigned int count=0;
 		//given an adjacency matrix A , neighbors of node i are simply the non-zero entries of
 		//the vector A[i]
-		for(unsigned j=0; j<N && count<q; j++)
+		for(vd_sz j=0; j<N && count<q; j++)
 		{
 			if(this->weight[index(i,j)]==1)
 			{
