@@ -66,7 +66,7 @@ double IsingModel::magnetization(){
 double IsingModel::hamiltonian()
 {	if(lattice==NULL){
 	cout<<"[!]IsingModel:invalid lattice pointer received!"<<endl;
-	return -1;
+	return 0;
 	}
     double H=0;
     double deltaE = 0;

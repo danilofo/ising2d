@@ -36,7 +36,7 @@ int calibrate_ising(unsigned int max_mcs, const char * outfilename1){
 
 	unsigned int max_side_dim=20; //declare the size of the lattice, via its side length
 	unsigned int lattice_dim= max_side_dim*max_side_dim; //coincide with the size of a mcs
-	cout<<"[+]Metropolis Monte Carlo simulation of a 2D Ising model."<<endl;
+	cout<<"[+]Metropolis Monte Carlo simulation of the 2D Ising model."<<endl;
 	cout<<"[+]Creating the run manager for the simulation..."<<endl;
 	IsingModel ising_model(max_side_dim );  //initial size represents the maximum size allowed
 
@@ -50,7 +50,8 @@ int calibrate_ising(unsigned int max_mcs, const char * outfilename1){
 	cout<<"   Using a greater L in the simulation can result in unreliable measurements."<<endl;
 
 	vector<double> magnetization(max_mcs);
-	double beta_c = 100; // note that this is computed for k_b=1 and J=1, T_C = 2.269
+	double beta_c = 0.6; // note that this is computed for k_b=1 and J=1, T_C = 2.269
+	cout<<"[+]Current beta="<<beta_c<<endl;
 	//simulate the convergence
 	for (unsigned i=0; i <max_mcs; i++)
 	{	if(i%100==0)cout<<"[+]MonteCarlo steps performed:"<<(i)<<"/"<<max_mcs<<"..."<<endl;
@@ -64,11 +65,11 @@ int calibrate_ising(unsigned int max_mcs, const char * outfilename1){
 	cout<<"[+]Populating histogram"<<endl;
 	for (unsigned i=0; i<max_mcs; i++)
 	{
-		magn_vs_time->AddBinContent(i, magnetization[i]);
+		magn_vs_time->Fill(i, magnetization[i]);
 	}
 	cout<<"[+]Drawing the histogram..."<<endl;
 	new TCanvas();
-	magn_vs_time->Draw();
+	magn_vs_time->DrawCopy();
 	cout<<"Recreating the file "<<outfilename1<<"..."<<endl;
 	TFile out_root(outfilename1,"recreate", "Ising simulation results");
 	cout<<"[+]Saving..."<<endl;
@@ -112,7 +113,7 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 
 	cout<<"[+]Starting the main simulation procedure."<<endl;
 	//Lattice side size should always be tested against max_side_dim
-	vector<unsigned> length_list={8};
+	vector<unsigned> length_list={8,12,14,16,20};
 	vec_sz list_size = length_list.size();
 	cout<<"[+]Simulating 2D Ising model on a square lattice with L*L spins "<<endl;
 	cout<<"   for the following values of L:"<<endl;
@@ -203,7 +204,7 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 
 		for(unsigned j=0; j<temp_steps; j++){
 			cout<<"[D]		Current binder's cumulant is:"<<binder_cumulants[idx(i,j,temp_steps)]<<endl;
-			hfit->Fill(j,binder_cumulants[idx(i,j,temp_steps)]);
+			hfit->Fill(inv_temperature[j],binder_cumulants[idx(i,j,temp_steps)]);
 			//DEBUG: error should be found starting here!
 			cout<<"[D]		hfit populated!"<<endl;
 		}
@@ -213,16 +214,17 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 		new TCanvas();
 		hfit->DrawCopy(); //DEBUG
 		cout<<"Printed"<<endl;
-		TF1 *f_i_fit = hfit->GetFunction("f_i_fit");
+		TF1 *f_i_fit = hfit->GetFunction("fit_f");
 		cout<<"[D] Temp fit function obtained from histogram:"<<endl;
 		for(unsigned j=0; j<n_fitparam; j++) {
-			cout<<"[D] Parameter j is"<<f_i_fit->GetParameter(j)<<endl;
 			fitparam_matrix[idx(i,j,n_fitparam)]=f_i_fit->GetParameter(j);
 		}
 		cout<<endl;
 		cout<<"    Fit "<<i<<"/"<<list_size<<" completed!"<<endl;
-		if(hfit!=NULL ) delete hfit;
-		if(f_i_fit!=NULL ) delete f_i_fit;
+		hfit->SetDirectory(0);
+		delete f_i_fit;
+		delete hfit;
+
 		cout<<"[D]Temporary pointers deleted!"<<endl;
 	}
 

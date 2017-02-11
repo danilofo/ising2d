@@ -33,9 +33,11 @@ class Graph //: public TObject
 	//Public getter functions:
 	vd_sz getDimension();
 
+
 	//Public setter functions:
 	//protected members can be accessed by the derived class
 	protected:
+
 	//Utilities
 	vec_sz index(const vec_sz ,const vec_sz) const; //return the correct index for the 1d representation of matrices
 	vector<Spin> spin; //std::vector instead of C-like array! contains matrix of spins, allocated dynamically

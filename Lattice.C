@@ -126,7 +126,7 @@ void Lattice::initRectangularLattice()
 
 
 //class functionalities:
-void Lattice::flip(const vec_sz i)
+void Lattice::flip(const vd_sz i)
 {
 	const vd_sz N = this->getDimension();
 	if(i>N-1)

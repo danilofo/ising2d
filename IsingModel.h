@@ -24,7 +24,7 @@ class IsingModel: public SimulationModel {
 	IsingModel(vec_sz length, double J=1);
 	~IsingModel();
 	//simulation
-	double magnetization();
+	virtual double magnetization();
 	virtual double hamiltonian(); //virtual qualifier here is ignored, but improves readability
 	virtual double magnVar(double old_val, double new_val);
 	//actions on the lattice

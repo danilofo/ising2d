@@ -27,14 +27,18 @@ class Lattice: public Graph {
 		~Lattice();
 		
 		//Functionalities
-		virtual void flip(const vd_sz ); //flip the i-th node
+
 		virtual const vector<vd_sz> neighbors( const vd_sz ) ; //returns an array with neighbors' index
 		virtual void reset(const char * flag="random");
 		unsigned getCoordN();
+
+		virtual void flip(const vd_sz ); //flip the i-th node
+
 	private:
 		//Data members
 		vd_sz length;
 		unsigned int coord_number;
+
 
 		//Private member functions:
 		//initialization procedures

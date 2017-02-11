@@ -26,6 +26,7 @@ class SimulationModel//: public TObject
 
 	//
     void simulate(double beta, unsigned n_iterations=1000);
+    virtual double magnetization()=0;
     virtual double hamiltonian()=0;
     virtual double magnVar(double old_val, double new_val)=0;
 
@@ -35,6 +36,7 @@ class SimulationModel//: public TObject
 
     double getEnergy() const ;
     double getMagnetization() const;
+    void flipSpin(vd_sz);
     
 
 

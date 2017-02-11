@@ -22,6 +22,12 @@ void SimulationModel::setEnergy(double e) {this->E=e;}
 void SimulationModel::setMagnetization(double m ) {this->M=m;}
 double SimulationModel::getMagnetization() const { 	return this->M;}
 double SimulationModel::getEnergy() const {	return this->E;}
+void SimulationModel::flipSpin(vd_sz i){
+	double old_v = this->graph->getNodeValue(i);
+	this->graph->flip(i);
+	double new_v = this->graph->getNodeValue(i);
+	this->setMagnetization(this->M+magnVar(old_v,new_v));
+}
 void SimulationModel::simulate(double beta, //inverse temperature
 		unsigned n_iterations){
 	//Metropolis Monte Carlo simulation of a model defined by an hamiltonian on a generic graph;
@@ -39,6 +45,60 @@ void SimulationModel::simulate(double beta, //inverse temperature
 	}
 	else
 	{
+		//initialize loop variables
+		vd_sz dim = this->graph->getDimension();
+		vd_sz node_i= 0;
+		double spin_i0 = 0;
+		double spin_i1 = 0;
+		double E0 = this->hamiltonian();
+		double E1= 0;
+		double boltz_w =0;
+
+		for(unsigned i=0; i<n_iterations; i++){
+			node_i = Rnd->Integer(dim);
+			//save current state of node i
+			spin_i0 = this->graph->getNodeValue(node_i);
+			//flip current spin
+			this->flipSpin(node_i);
+			//save new value (general)
+			spin_i1 = this->graph->getNodeValue(node_i);
+			//update E1
+			E1=this->hamiltonian();
+			if(E0<E1){ // we are accepting with prob boltz_w
+				boltz_w = std::exp(beta*(E0-E1));
+				if(Rnd->Rndm() < boltz_w) { //we accept an higher energy
+					E0=E1;
+				}
+				else //we are rejecting the increase in energy
+					this->flipSpin(node_i);
+			}
+			else{ //we are accepting with probability one
+				E0=E1; //update current minimum
+			}
+		}
+	this->setEnergy(E0);
+	}
+
+	return ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		/*
+
+
 		//initialization
 		vd_sz N = this->graph->getDimension(); //total number of spin
 		double NewH=0; //energy of the proposed distribution
@@ -51,13 +111,13 @@ void SimulationModel::simulate(double beta, //inverse temperature
 		//loop until n_iterations is reached
 		for(unsigned i=1; i<n_iterations; i++)
 		{
+			//index=(index+1)%N;
 			index= Rnd->Integer(N);
 			//proposal
-			spin_value_i0=this->graph->getNodeValue(index);
+			//spin_value_i0=this->graph->getNodeValue(index);
 			this->graph->flip(index);
-			spin_value_i1=this->graph->getNodeValue(index);
-			if(spin_value_i0!=(-1)*spin_value_i1) cout<<"[D] flip error"<<endl;
-			magnetization+= this->magnVar(spin_value_i0,spin_value_i1);
+			//spin_value_i1=this->graph->getNodeValue(index);
+			//magnetization+= this->magnVar(spin_value_i0,spin_value_i1);
 			NewH=this->hamiltonian();
 			delta=H0-NewH;//negative if NewH>H0; improvements should always be accepted!
 			boltz=std::exp( beta * delta );
@@ -66,14 +126,16 @@ void SimulationModel::simulate(double beta, //inverse temperature
 			if (acceptance==1)
 			{
 				H0=NewH;
-				magnetization=this->magnVar(spin_value_i1,spin_value_i0);
+				magnetization=this->magnetization();
+				//magnetization+=this->magnVar(spin_value_i1,spin_value_i0);
 			}
 			else
 			{
 				if(Rnd->Rndm()<acceptance )
 				{
 					H0=NewH;
-					magnetization+= this->magnVar(spin_value_i1,spin_value_i0);
+					magnetization=this->magnetization();
+					//magnetization+= this->magnVar(spin_value_i1,spin_value_i0);
 				}
 				else this->graph->flip(index);
 			}
@@ -83,4 +145,4 @@ void SimulationModel::simulate(double beta, //inverse temperature
 	this->setMagnetization(magnetization);
 	this->setEnergy(H0);
 	return;
-}
+}*/
