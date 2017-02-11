@@ -1,3 +1,4 @@
+
 /*
  * IsingModel.h
  *
@@ -10,28 +11,30 @@
 
 #ifndef ISINGMODEL_H_
 #define ISINGMODEL_H_
-#include "lattice.h"
-#include <algorithm>
+#include "Lattice.h"
+#include "SimulationModel.h"
 
-typedef std::vector<int>::size_type vec_sz;
 
-class IsingModel: public TObject {
+
+class IsingModel: public SimulationModel {
+	//An Ising Model defined on a lattice (class Lattice)
+
 	public:
 	//public constructors
-	IsingModel();
-	IsingModel(vec_sz lenght, double J=1., const char* type="lattice" );
-
+	IsingModel(vec_sz length, double J=1);
+	~IsingModel();
 	//simulation
-	//ALL FUNCTIONS HERE SHOULD IGNORE THE TYPE OF GRAPH
-	//HOW TO DO THE SAME FOR THE HAMILTONIAN?
-	const double simulate(double beta, unsigned n_iterations=1000);
-	const double hamiltonian();
+	virtual double magnetization();
+	virtual double hamiltonian(); //virtual qualifier here is ignored, but improves readability
+	virtual double magnVar(double old_val, double new_val);
+	//actions on the lattice
+    virtual void resetGraph(); //
+    virtual void newGraph(vec_sz N,const char* flag="random"); //
 
 	private:
-	//The default construction of a Lattice object should be replaced with a Graph object!
-	//At runtime the constructor IsingModel should assign the correct object;
-	Lattice lattice;
+    Lattice* lattice;
 	const double coupling;
+	static unsigned n_instances;
 
 	ClassDef(IsingModel,1); //Used by to define a class ROOT
 
