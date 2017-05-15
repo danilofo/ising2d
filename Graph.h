@@ -25,7 +25,7 @@ class Graph //: public TObject
 	Graph(vd_sz =0, TRandom3* =NULL);
 	virtual ~Graph();
 	//Functionalities
-	virtual void flip(const vec_sz )=0; //flip the i-th node
+	void flip(const vec_sz ); //flip the i-th node
 	virtual const vector<vec_sz> neighbors( const vec_sz )=0; //returns an array with neighbors' index
 	double getNodeValue(const vd_sz); //return the state of an individual spin
 	virtual void reset(const char * flag="random")=0;

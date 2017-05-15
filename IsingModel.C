@@ -11,7 +11,7 @@
 //implementazione della classe
 ClassImp(IsingModel)
 
-//Counter for instances of IsingModel
+//Counter for instances of IsingModel: see Singleton design pattern
 unsigned IsingModel::n_instances=0;
 //public constructors
 IsingModel::IsingModel(vec_sz length, double J): SimulationModel(),lattice(NULL),coupling(J)
@@ -37,8 +37,11 @@ IsingModel::IsingModel(vec_sz length, double J): SimulationModel(),lattice(NULL)
 	this->E=this->hamiltonian();
 	//cout<<"[D]IsingModel: hamiltonian...completed"<<endl;
 	vd_sz N = length*length;
-	this->M=this->magnetization();
-	n_instances+=1;
+	//this->M=this->magnetization();
+	for (unsigned i = 0; i<N ; i++ ) this->sum_m+= (this->lattice->getNodeValue(i) );
+	double Ndb = N;
+	this->M = this->sum_m/Ndb;
+	n_instances+=1; //enforce the Singleton design pattern
 }
 
 IsingModel::~IsingModel()
@@ -82,7 +85,7 @@ double IsingModel::hamiltonian()
             //of dividing the result by 2
             if(neighs_i[j]>i) {
             	deltaE = (this->lattice->getNodeValue(i))*(this->lattice->getNodeValue(neighs_i[j]));
-            	H+=  deltaE;
+            	H+= deltaE;
             }
         }
     }
@@ -90,9 +93,22 @@ double IsingModel::hamiltonian()
     return H;
 }
 
-double IsingModel::magnVar(double old_val, double new_val){
-	vd_sz N = this->lattice->getDimension();
-	return (-2.)*(old_val/N);
+double IsingModel::energyVar(vd_sz node_i, double old_val, double new_val){
+	double result =0;
+	vector<vd_sz> neighs_i= this->lattice->neighbors(node_i);
+	unsigned q = neighs_i.size();
+	// each product in the hamiltonian changes sign once-->  (-2)*old_i
+	//A correction factor (1/2) is use to
+	for(vd_sz j=0; j<q; j++){
+		result-= old_val*this->lattice->getNodeValue(j);
+		result+=(-2)*old_val*this->lattice->getNodeValue(j);
+	}
+	result = this->coupling * result;
+	return result;
+}
+
+double IsingModel::mVar(double old_val, double new_val){
+	return (-2.)*(old_val);
 }
 
 void IsingModel::resetGraph(){
@@ -104,6 +120,11 @@ void IsingModel::resetGraph(){
 	this->lattice->reset();
 	//reset the values of E,M
 	this->E = this->hamiltonian();
+	this->sum_m=0;
+	this->M=0;
+	vd_sz N = this->lattice->getDimension();
+	//this->M=this->magnetization();
+	for (unsigned i = 0; i<N ; i++ ) this->sum_m+= (this->lattice->getNodeValue(i) );
 	this->M = this->magnetization();
 	//cout<<"[D]newGraph:old energy:"<<this->E<<endl;
 
@@ -115,16 +136,18 @@ void IsingModel::newGraph(vec_sz N,const char* flag){
 	//cout<<"[D]IsingModel:lattice deleted"<<endl;
 	this->lattice = new Lattice(N,this->Rnd,4,flag);
 	if(lattice==NULL){
-		//cout<<"[!]IsingModel:newGraph:Invalid allocation!"<<endl;
+		cout<<"[!]IsingModel:newGraph:Invalid allocation!"<<endl;
 		return;
 	}
 	//cout<<"[D]IsingModel: new lattice created"<<endl;
 	this->graph = this->lattice;
 	this->E=this->hamiltonian();
-	//cout<<"[D]IsingModel: hamiltonian...completed"<<endl;
+	this->sum_m=0;
+	this->M=0;
+	vd_sz N = this->lattice->getDimension();
+	//this->M=this->magnetization();
+	for (unsigned i = 0; i<N ; i++ ) this->sum_m+= (this->lattice->getNodeValue(i) );
 	this->M = this->magnetization();
-	//cout<<"[D]IsingModel: new lattice initializated"<<endl;
-	//cout<<"[D]newGraph:new energy:"<<this->E<<endl;
 	}
 	else cout<<"[!]IsingModel:newGraph:Null pointer received"<<endl;
 }

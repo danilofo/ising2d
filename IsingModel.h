@@ -21,12 +21,13 @@ class IsingModel: public SimulationModel {
 
 	public:
 	//public constructors
-	IsingModel(vec_sz length, double J=1);
+	IsingModel(vec_sz length, double J=-1.);
 	~IsingModel();
 	//simulation
 	virtual double magnetization();
 	virtual double hamiltonian(); //virtual qualifier here is ignored, but improves readability
-	virtual double magnVar(double old_val, double new_val);
+	virtual double mVar(double old_val, double new_val);
+	virtual double energyVar(vd_sz node_i, double old_val, double new_val);
 	//actions on the lattice
     virtual void resetGraph(); //
     virtual void newGraph(vec_sz N,const char* flag="random"); //

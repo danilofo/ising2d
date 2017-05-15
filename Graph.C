@@ -28,3 +28,14 @@ double Graph::getNodeValue(const vd_sz i){ //return the state of an individual s
 	return spin_i;
 }
 
+void Graph::flip(const vd_sz i)
+{
+	const vd_sz N = this->getDimension();
+	if(i>N-1)
+	{
+		cout<<"Node "<<i<<" is not in the graph (dimension="<<N<<")"<<endl;
+	}
+	else{
+		this->spin[i].flipSpin();
+	}
+}
