@@ -25,10 +25,11 @@ class SimulationModel//: public TObject
 	virtual ~SimulationModel();
 
 	//
-    void simulate(double beta, unsigned n_iterations=1000);
+    void simulate(double beta, vd_sz n_iterations=1000);
     virtual double magnetization()=0;
     virtual double hamiltonian()=0;
-    virtual double magnVar(double old_val, double new_val)=0;
+    virtual double mVar(double old_val, double new_val)=0;
+    virtual double energyVar(vd_sz node_i, double old_val, double new_val)=0;
 
     //Actions on graph
     virtual void resetGraph()=0; //
@@ -46,10 +47,11 @@ class SimulationModel//: public TObject
 
 	//debug only
     void setEnergy(double ) ;
-    void setMagnetization(double ) ;
+    void setsum(double ) ;
 
 	double E;//current energy
 	double M; //current magnetization
+	double sum_m;
 
 	ClassDef(SimulationModel,1); //Used by to define a class ROOT
 };

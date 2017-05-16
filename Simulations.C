@@ -32,7 +32,7 @@ double quadratic(double *x, double *par)
       return result;
    }
 
-int calibrate_ising(unsigned int max_mcs, const char * outfilename1){
+int calibrate_ising(double beta, unsigned int max_mcs, const char * outfilename1){
 
 	unsigned int max_side_dim=20; //declare the size of the lattice, via its side length
 	unsigned int lattice_dim= max_side_dim*max_side_dim; //coincide with the size of a mcs
@@ -50,12 +50,12 @@ int calibrate_ising(unsigned int max_mcs, const char * outfilename1){
 	cout<<"   Using a greater L in the simulation can result in unreliable measurements."<<endl;
 
 	vector<double> magnetization(max_mcs);
-	double beta_c = 0.6; // note that this is computed for k_b=1 and J=1, T_C = 2.269
-	cout<<"[+]Current beta="<<beta_c<<endl;
+
+	cout<<"[+]Current beta="<<beta<<endl;
 	//simulate the convergence
 	for (unsigned i=0; i <max_mcs; i++)
 	{	if(i%100==0)cout<<"[+]MonteCarlo steps performed:"<<(i)<<"/"<<max_mcs<<"..."<<endl;
-		ising_model.simulate(beta_c,lattice_dim); //1 mcs
+		ising_model.simulate(beta,lattice_dim); //1 mcs
 		magnetization[i]=ising_model.getMagnetization();
 	}
 
@@ -69,7 +69,7 @@ int calibrate_ising(unsigned int max_mcs, const char * outfilename1){
 	}
 	cout<<"[+]Drawing the histogram..."<<endl;
 	new TCanvas();
-	magn_vs_time->DrawCopy();
+	magn_vs_time->DrawCopy("hist");
 	cout<<"Recreating the file "<<outfilename1<<"..."<<endl;
 	TFile out_root(outfilename1,"recreate", "Ising simulation results");
 	cout<<"[+]Saving..."<<endl;
@@ -81,7 +81,7 @@ int calibrate_ising(unsigned int max_mcs, const char * outfilename1){
 	return 1;
 }
 
-int simulate_ising(const char * outfilename1, const char * outfilename2, unsigned long int max_mcs =0, unsigned  max_side_dim=20)
+int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsigned  max_side_dim=20)
 {	//User program; writes results to a file resp. in ROOT / raw numerical format
 
 	//Ising model:
@@ -105,7 +105,7 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 	cout<<"[+]Creating the run manager for the simulation..."<<endl;
 	IsingModel ising_model(max_side_dim);
 	cout<<"[+]Creation completed"<<endl;
-	//The aim of the programme is to evaluate the
+	//The aim of the program is to evaluate the
 	//T_C; we will compute an array of Binder's cumulant at various temperatures in (0.2,infinity)
 	//for a choice of lattice l=(8,16,32,64)
 	//then we will perform a quadratic fit using ROOT (see e.g. https://root.cern.ch/root/HowtoFit.html)
@@ -113,7 +113,8 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 
 	cout<<"[+]Starting the main simulation procedure."<<endl;
 	//Lattice side size should always be tested against max_side_dim
-	vector<unsigned> length_list={8,12,14,16,20};
+	vector<unsigned> length_list={8}; //,12,14,16,20};
+	//vector<const char *> name_list={"L=8","L=12","L=14","L=16","L=20"};
 	vec_sz list_size = length_list.size();
 	cout<<"[+]Simulating 2D Ising model on a square lattice with L*L spins "<<endl;
 	cout<<"   for the following values of L:"<<endl;
@@ -122,11 +123,11 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 	for (unsigned i =0; i<list_size; i++)
 			if(length_list[i]>max_side_dim)
 				cout<<"[!]Maximum lattice size ("<<max_side_dim<<") exceeded: results could be unreliable!"<<endl;
-	double max_beta = 200.; // min temp T=5e-3
+	double max_beta = 20.; // min temp T=5e-2
 	double min_beta = 0.; 	//max temp = infinity
-	unsigned temp_steps=80;
+	unsigned temp_steps=200;
 	vector<double> inv_temperature(temp_steps);
-	for (int i = 0; i<temp_steps; i++ ){
+	for (unsigned i = 0; i<temp_steps; i++ ){
 		inv_temperature[i]=min_beta+i*(max_beta-min_beta)/temp_steps;
 	}
 	//we used a 2x2 matrix representation in which binder_cumulant[index(i,j,N)]
@@ -151,7 +152,7 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 			//vectors of energy and magnetizations of the current model
 
 			//burn-in time
-			ising_model.simulate(inv_temperature[j],(max_mcs/10)+1); //empirical...
+			ising_model.simulate(inv_temperature[j],150); //burn in time (empirical)
 			for(unsigned k=0; k<max_mcs; k++)
 			{
 				ising_model.simulate(inv_temperature[j],length_list[i]*length_list[i]);
@@ -170,14 +171,14 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 				m_2k= magnetization[k]*magnetization[k];
 				m_2+= m_2k;
 				m_4+= m_2k*m_2k;
-				e_2 = energy[k]*energy[k];
-				e_m = energy[k];
+				e_2+= energy[k]*energy[k];
+				e_m+= energy[k];
 			}
 			m_4=m_4 / max_mcs;
 			m_2=m_2 / max_mcs;
 			e_2=e_2 / max_mcs;
 			e_m=e_m / max_mcs;
-			cout<<"m_4 "<<m_4<<" "<<"m_2 "<<m_2<<" "<<" e_2 "<<e_2<<" e_m "<<e_m<<endl;
+			cout<<"[D] m_4 "<<m_4<<" "<<"m_2 "<<m_2<<" "<<" e_2 "<<e_2<<" e_m "<<e_m<<endl;
 			binder_cumulants[idx(i,j, temp_steps)] = 1 - ( m_4/(3*m_2*m_2)); //compute the binder's cumulant for this T
 			heat_capacity[idx(i,j,temp_steps)] =inv_temperature[j]*inv_temperature[j]*(e_2-(e_m*e_m)); // compute the heat capacity(T)=k_b T^2 (var E)
 			ising_model.resetGraph(); //reset each time!
@@ -190,7 +191,7 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 	unsigned n_fitparam=3;
 	unsigned M=list_size*n_fitparam;
 	vector<double> fitparam_matrix(M);
-	cout<<"[D]fitparam_matrix created"<<endl;
+	//cout<<"[D]fitparam_matrix created"<<endl;
 
 	TF1 *fit_f = new TF1("fit_f",quadratic,0.,5.,n_fitparam); //range(0,5), 3 parameters
 	cout<<"[D]fit_f TF1 created"<<endl;
@@ -198,34 +199,29 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 
 	//TODO:fitting procedure for each lattice, update fitparam_matrix
 	for (unsigned i=0; i<list_size; i++){
-		TH1D *hfit = new TH1D("temp_hist","Binder's cumulant vs Inverse temperature",temp_steps,0,temp_steps);
+		TH1D *hfit = new TH1D("temp_hist","Binder's cumulant vs Inverse temperature ",temp_steps,min_beta,max_beta);
 		cout<<"[D]	Temp hist created"<<endl;
 		//populate the hist
-
 		for(unsigned j=0; j<temp_steps; j++){
-			cout<<"[D]		Current binder's cumulant is:"<<binder_cumulants[idx(i,j,temp_steps)]<<endl;
+			//cout<<"[D]		Current binder's cumulant is:"<<binder_cumulants[idx(i,j,temp_steps)]<<endl;
 			hfit->Fill(inv_temperature[j],binder_cumulants[idx(i,j,temp_steps)]);
-			//DEBUG: error should be found starting here!
-			cout<<"[D]		hfit populated!"<<endl;
+			//cout<<"[D]		hfit populated!"<<endl;
 		}
 		cout<<"[D]Accessing hfit and fitting fit_f to it"<<endl;
 		hfit->Fit("fit_f");
 		cout<<"[D] Fit done"<<endl;
 		new TCanvas();
 		hfit->DrawCopy(); //DEBUG
-		cout<<"Printed"<<endl;
+		//cout<<"Printed"<<endl;
 		TF1 *f_i_fit = hfit->GetFunction("fit_f");
 		cout<<"[D] Temp fit function obtained from histogram:"<<endl;
 		for(unsigned j=0; j<n_fitparam; j++) {
 			fitparam_matrix[idx(i,j,n_fitparam)]=f_i_fit->GetParameter(j);
 		}
 		cout<<endl;
-		cout<<"    Fit "<<i<<"/"<<list_size<<" completed!"<<endl;
+		cout<<"    Fit "<<i+1<<"/"<<list_size<<" completed!"<<endl;
 		hfit->SetDirectory(0);
-		delete f_i_fit;
-		delete hfit;
 
-		cout<<"[D]Temporary pointers deleted!"<<endl;
 	}
 
 	//once we have a fit we can approximate the  T_C finding the root of fit_i-fit_j;
@@ -237,8 +233,8 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 		double params[3] = {0,0,0};
 		for (unsigned j=0; j<n_fitparam; j++)
 		{
-			cout<<"[D] param ("<<i<<","<<j<<") = "<<fitparam_matrix[idx(i,j,M)]<<" ";
-			cout<<"[D] param ("<<i<<","<<4<<") = "<<fitparam_matrix[idx(list_size-1,j,M)]<<endl;
+			//cout<<"[D] param ("<<i<<","<<j<<") = "<<fitparam_matrix[idx(i,j,M)]<<" ";
+			//cout<<"[D] param ("<<i<<","<<4<<") = "<<fitparam_matrix[idx(list_size-1,j,M)]<<endl;
 			params[j]=fitparam_matrix[idx(i,j,M)]-fitparam_matrix[idx(list_size-1,j,M)];
 		}
 		fit_f->SetParameters(params);
@@ -260,12 +256,6 @@ int simulate_ising(const char * outfilename1, const char * outfilename2, unsigne
 
 }
 
-int simulate_driven_ising( const char* outfilename )
-{
-	//2. Driven ising model simulation
-		//DrivenIsingModel *driven_ising = new DrivenIsingModel(8);
 
-	return 0;
-}
 
 

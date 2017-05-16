@@ -32,7 +32,6 @@ class Lattice: public Graph {
 		virtual void reset(const char * flag="random");
 		unsigned getCoordN();
 
-		virtual void flip(const vd_sz ); //flip the i-th node
 
 	private:
 		//Data members

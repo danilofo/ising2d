@@ -59,7 +59,7 @@ void Lattice::initSpins(const char * flag)
 	}
 	else
 	{
-		cout<<"[!]Initialization failed. Admitted choices : \"random\", \"ordered\" "<<endl;
+		cout<<"[!]Lattice:Initialization failed. Admitted choices : \"random\", \"ordered\" "<<endl;
 	}
 
 }
@@ -126,17 +126,6 @@ void Lattice::initRectangularLattice()
 
 
 //class functionalities:
-void Lattice::flip(const vd_sz i)
-{
-	const vd_sz N = this->getDimension();
-	if(i>N-1)
-	{
-		cout<<"Node "<<i<<" is not in the lattice (dimension="<<N<<")"<<endl;
-	}
-	else{
-		this->spin[i].flipSpin();
-	}
-}
 
 const vector<vd_sz> Lattice::neighbors( const vd_sz i)
 {
