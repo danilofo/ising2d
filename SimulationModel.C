@@ -11,27 +11,21 @@ using namespace std;
 //implementazione della classe
 ClassImp(SimulationModel)
 //public constructors
-SimulationModel::SimulationModel():graph(NULL),M(0),E(0),sum_m(0),Rnd(NULL){}
+SimulationModel::SimulationModel():graph(NULL),M(0),E(0),Rnd(NULL){}
 SimulationModel::~SimulationModel(){
 	//TRandom3* Rnd is created in this class, so the destructor deletes it.
 	//The pointer Graph* graph, instead, is assigned to an object only in the
 	//derived class, so it should not be deleted.
     if(Rnd!=NULL) delete Rnd;
 }
-void SimulationModel::setEnergy(double e) {this->E=e;}
-void SimulationModel::setsum(double m ) { this->sum_m=m;}
 double SimulationModel::getMagnetization() const { return this->M;}
 double SimulationModel::getEnergy() const {	return this->E;}
 void SimulationModel::flipSpin(vd_sz i){
 	double old_v = this->graph->getNodeValue(i);
 	this->graph->flip(i);
 	double new_v = this->graph->getNodeValue(i);
-	//cout<<"[D]Setting the magn"<<endl;
-	this->setsum(this->sum_m + this->mVar(old_v,new_v));
-	double N = this->graph->getDimension();
-	this->M= ((this->sum_m)/N);
-	this->E=this->hamiltonian();
-	cout<<"Size | sum | en:"<<N<<"|"<<sum_m<<"|"<<E<<endl;
+	this->M+= mVar(old_v,new_v);
+	this->E+=energyVar(i,old_v,new_v);
 }
 void SimulationModel::simulate(double beta, //inverse temperature
 		vd_sz n_iterations){
@@ -52,7 +46,7 @@ void SimulationModel::simulate(double beta, //inverse temperature
 		vd_sz node_i= 0;
 		double spin_i0 = 0;
 		double spin_i1 = 0;
-		double E0 = this->hamiltonian(); //call the hamiltonian once
+		double E0 = this->getEnergy();
 		double E1= 0;
 		double boltz_w =0;
 		for(unsigned i=0; i<n_iterations; i++){
@@ -63,8 +57,7 @@ void SimulationModel::simulate(double beta, //inverse temperature
 			this->flipSpin(node_i);
 			//save new value (general)
 			spin_i1 = this->graph->getNodeValue(node_i);
-			//update delta
-			//E1=E0+ energyVar(node_i,spin_i0,spin_i1);
+			//energy after update
 			E1=this->getEnergy();
 			if(E0-E1<0){ // we are accepting with prob boltz_w
 				boltz_w = std::exp(beta*(E0-E1));
@@ -78,7 +71,6 @@ void SimulationModel::simulate(double beta, //inverse temperature
 				E0=E1; //update current minimum
 			}
 		}
-	//this->setEnergy(E0);
 	}
 	return ;
 }
