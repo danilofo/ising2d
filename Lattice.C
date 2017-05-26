@@ -134,7 +134,7 @@ const vector<vd_sz> Lattice::neighbors( const vd_sz i)
 
 	if (i>N-1) //check if i is in the lattice
 	{
-		cout<<"[!]Lattice: Node "<<i<<" is not in the lattice (dimension="<<N<<")"<<endl;
+		cout<<"[!]Node "<<i<<" is not in the lattice (dimension="<<N<<")"<<endl;
 		vector<vd_sz> neighs;
 		return neighs; //two distinct returns are needed to avoid vector neighs to go out-of-scope
 	}

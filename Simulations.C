@@ -16,9 +16,6 @@
 #include <TFile.h>
 #include <TF1.h>
 
-#include <fstream>
-#include <sstream>
-
 using namespace std;
 
 //Utilities
@@ -105,7 +102,7 @@ int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsi
 	//TODO: add timing!
 
 	cout<<"[+]Metropolis Monte Carlo simulation of a 2D Ising model."<<endl;
-	cout<<"[+]Creating the run manager for the simulation...";
+	cout<<"[+]Creating the run manager for the simulation..."<<endl;
 	IsingModel ising_model(max_side_dim);
 	cout<<"[+]Creation completed"<<endl;
 	//The aim of the program is to evaluate the
@@ -113,10 +110,11 @@ int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsi
 	//for a choice of lattice l=(8,16,32,64)
 	//then we will perform a quadratic fit using ROOT (see e.g. https://root.cern.ch/root/HowtoFit.html)
 	//and take T_C equal to the fixed point
+
 	cout<<"[+]Starting the main simulation procedure."<<endl;
 	//Lattice side size should always be tested against max_side_dim
-	vector<unsigned> length_list={10,12,15,16};
-	vector<const char *> name_list={"10","12","15","16"};
+	vector<unsigned> length_list={2}; //,12,14,16,20};
+	//vector<const char *> name_list={"L=8","L=12","L=14","L=16","L=20"};
 	vec_sz list_size = length_list.size();
 	cout<<"[+]Simulating 2D Ising model on a square lattice with L*L spins "<<endl;
 	cout<<"   for the following values of L:"<<endl;
@@ -125,9 +123,9 @@ int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsi
 	for (unsigned i =0; i<list_size; i++)
 			if(length_list[i]>max_side_dim)
 				cout<<"[!]Maximum lattice size ("<<max_side_dim<<") exceeded: results could be unreliable!"<<endl;
-	double max_beta = 0.5; // min temp T=1
-	double min_beta = 0.4; 	//max temp = infinity
-	unsigned temp_steps=100;
+	double max_beta = 20.; // min temp T=5e-2
+	double min_beta = 0.; 	//max temp = infinity
+	unsigned temp_steps=200;
 	vector<double> inv_temperature(temp_steps);
 	for (unsigned i = 0; i<temp_steps; i++ ){
 		inv_temperature[i]=min_beta+i*(max_beta-min_beta)/temp_steps;
@@ -152,13 +150,16 @@ int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsi
 		{	//mcs_i = max_mcs / (max_side_dim/length_list[i]); //integer division, this linear speed up "should not mess up"...
 			//unsigned long int max_steps_i = mcs_i*length_list[i]*length_list[i]; //total n of steps
 			//vectors of energy and magnetizations of the current model
-			ising_model.resetGraph(); //reset each time!
+
 			//burn-in time
-			ising_model.simulate(inv_temperature[j],max_mcs); //burn-in time (empirical)
+			//ising_model.simulate(inv_temperature[j],150); //burn in time (empirical)
 			for(unsigned k=0; k<max_mcs; k++)
-			{	ising_model.simulate(inv_temperature[j],length_list[i]*length_list[i]);
+			{
+                cout<<"simulate current step: "<<k<<endl;
+				ising_model.simulate(inv_temperature[j],length_list[i]*length_list[i]);
 				energy[k]=ising_model.getEnergy();
 				magnetization[k]=ising_model.getMagnetization();
+				if(magnetization[k]<-1) return -3;
 			}
 			//procedure to compute binder's cumulant and heat capacity
 			double m_2=0;
@@ -166,7 +167,6 @@ int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsi
 			double m_2k=0;
 			double e_2=0;
 			double e_m=0;
-			double m_m=0;
 			for (unsigned k=0; k<max_mcs; k++)
 			{
 				m_2k= magnetization[k]*magnetization[k];
@@ -174,20 +174,15 @@ int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsi
 				m_4+= m_2k*m_2k;
 				e_2+= energy[k]*energy[k];
 				e_m+= energy[k];
-				m_m+=magnetization[k];
 			}
-			//mean magnetization and energy
-			m_m=m_m/max_mcs;
+			m_4=m_4 / max_mcs;
+			m_2=m_2 / max_mcs;
+			e_2=e_2 / max_mcs;
 			e_m=e_m / max_mcs;
-			cout<<"L, temp, m"<<length_list[i]<<" "<<inv_temperature[j]<<" "<<m_m<<endl;
-			//second central moment of magnetization and energy
-			m_2=(m_2 / max_mcs);//-m_m*m_m;
-			e_2=(e_2 / max_mcs)-e_m*e_m;
-			//fourth central moment of the magnetization
-			m_4=(m_4 / max_mcs);//-pow(m_m,4);
+			cout<<"[D] m_4 "<<m_4<<" "<<"m_2 "<<m_2<<" "<<" e_2 "<<e_2<<" e_m "<<e_m<<endl;
 			binder_cumulants[idx(i,j, temp_steps)] = 1 - ( m_4/(3*m_2*m_2)); //compute the binder's cumulant for this T
-			heat_capacity[idx(i,j,temp_steps)] =inv_temperature[j]*inv_temperature[j]*(e_2); // compute the heat capacity(T)=k_b T^2 (var E)
-			//cout<<"heat capacity="<<heat_capacity[idx(i,j,temp_steps)] <<endl;
+			heat_capacity[idx(i,j,temp_steps)] =inv_temperature[j]*inv_temperature[j]*(e_2-(e_m*e_m)); // compute the heat capacity(T)=k_b T^2 (var E)
+			ising_model.resetGraph(); //reset each time!
 		}
 		cout<<"   [+]...completed."<<endl;
 	}
@@ -197,26 +192,27 @@ int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsi
 	unsigned n_fitparam=3;
 	unsigned M=list_size*n_fitparam;
 	vector<double> fitparam_matrix(M);
+	//cout<<"[D]fitparam_matrix created"<<endl;
 
-	TF1 *fit_f = new TF1("fit_f",quadratic,min_beta,max_beta,n_fitparam);
+	TF1 *fit_f = new TF1("fit_f",quadratic,0.,5.,n_fitparam); //range(0,5), 3 parameters
 	cout<<"[D]fit_f TF1 created"<<endl;
 
+
 	//TODO:fitting procedure for each lattice, update fitparam_matrix
-	double step_width=(max_beta-min_beta)/((double)temp_steps);
 	for (unsigned i=0; i<list_size; i++){
-		TH1D *hfit = new TH1D("temp_hist",name_list[i],temp_steps,min_beta-step_width,max_beta+step_width);
+		TH1D *hfit = new TH1D("temp_hist","Binder's cumulant vs Inverse temperature ",temp_steps,min_beta,max_beta);
 		cout<<"[D]	Temp hist created"<<endl;
 		//populate the hist
-		cout<<"Binder cumulants:"<<endl;
 		for(unsigned j=0; j<temp_steps; j++){
-			//cout<<"T bc = "<<inv_temperature[j]<<" "<<binder_cumulants[idx(i,j,temp_steps)]<<endl;
+			//cout<<"[D]		Current binder's cumulant is:"<<binder_cumulants[idx(i,j,temp_steps)]<<endl;
 			hfit->Fill(inv_temperature[j],binder_cumulants[idx(i,j,temp_steps)]);
+			//cout<<"[D]		hfit populated!"<<endl;
 		}
 		cout<<"[D]Accessing hfit and fitting fit_f to it"<<endl;
 		hfit->Fit("fit_f");
 		cout<<"[D] Fit done"<<endl;
 		new TCanvas();
-		hfit->DrawCopy("hist");
+		hfit->DrawCopy(); //DEBUG
 		//cout<<"Printed"<<endl;
 		TF1 *f_i_fit = hfit->GetFunction("fit_f");
 		cout<<"[D] Temp fit function obtained from histogram:"<<endl;
@@ -226,6 +222,7 @@ int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsi
 		cout<<endl;
 		cout<<"    Fit "<<i+1<<"/"<<list_size<<" completed!"<<endl;
 		hfit->SetDirectory(0);
+
 	}
 
 	//once we have a fit we can approximate the  T_C finding the root of fit_i-fit_j;
@@ -239,10 +236,10 @@ int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsi
 		{
 			//cout<<"[D] param ("<<i<<","<<j<<") = "<<fitparam_matrix[idx(i,j,M)]<<" ";
 			//cout<<"[D] param ("<<i<<","<<4<<") = "<<fitparam_matrix[idx(list_size-1,j,M)]<<endl;
-			params[j]=fitparam_matrix[idx(i,j,M)]-fitparam_matrix[idx(i+1,j,M)];
+			params[j]=fitparam_matrix[idx(i,j,M)]-fitparam_matrix[idx(list_size-1,j,M)];
 		}
 		fit_f->SetParameters(params);
-		criticalT[i]=1./(fit_f->GetX(0,0.43,0.55) ); //revert inverse temp
+		criticalT[i]=1./(fit_f->GetX(0,0,5) ); //revert inverse temp
 	}
 	cout<<"[+]Computing critical temperature T_c using the Binder's cumulant; "<<endl;
 	cout<<"   The following values are the estimates for T_c (in growing order of reliability)"<<endl;
@@ -253,55 +250,13 @@ int simulate_ising(const char * outfilename1, unsigned long int max_mcs =0, unsi
 	//Now we compute the critical exponent for the heat capacity C \propto (T_C -T)^alpha
 	//Heat capacity is computed using the FR theorem for equilibrium inside the SimulationModel class
 	//This is done for all the lattices
+
+
+	//TODO: raw output file close
 	return 0;
+
 }
 
-int generate_graphs(const char * outfilename1, unsigned long int max_mcs =0, unsigned  side_dim=6){
-	cout<<"[+]This function will output the graphs in the current folder."<<endl;
-	cout<<"[+]Creating the run manager for the simulation...";
-	IsingModel ising_model(side_dim);
-	//1) FIRST GRAPH: ABSOLUTE MAGNETIZATION VS TEMPERATURE
-	//declare streams for the output
-	ofstream outf;
-	outf.open("magnvsT.dat");
-	if (!outf.is_open()){
-		cout<<"\n[!]Could not open the outfile"<<endl;
-		return -1;
-	}
-	else cout<<" done"<<endl;
-	ostringstream buffer;
-	//title string of the output
-	buffer<<"beta"<<"\t"<<"M"<<"\n";
-	//parameters of the simulations
-	double max_beta = 1; // min temp T=5e-2
-	double min_beta = 0.; 	//max temp = infinity
-	unsigned temp_steps=120;
-	vector<double> inv_temperature(temp_steps);
-	for (unsigned i = 0; i<temp_steps; i++ ){
-		inv_temperature[i]=min_beta+i*(max_beta-min_beta)/temp_steps;
-	}
-	//variables for the results
-	vector<double> energy(max_mcs,0);
-	vector<double> magnetization(max_mcs,0);
-	for (unsigned j = 0; j<temp_steps; j++ ){
-		double m_m=0;
-		cout<<"Temp="<<inv_temperature[j]<<":";
-		ising_model.resetGraph(); //reset each time!
-		ising_model.simulate(inv_temperature[j],300);
-		for(unsigned k=0; k<max_mcs; k++)
-			{
-				ising_model.simulate(inv_temperature[j],side_dim*side_dim);
-				energy[k]=ising_model.getEnergy();
-				magnetization[k]=ising_model.getMagnetization();
-				m_m+=magnetization[k];
-				cout<<"value of magn_k="<<magnetization[k]<<" mean="<<m_m<<endl;
-			}
-		m_m=m_m/max_mcs;
-		cout<<"magn="<<m_m<<";";
-		buffer<<inv_temperature[j]<<"\t"<<fabs(m_m)<<"\n";
-		cout<<"done"<<endl;
-	}
-	outf<<buffer.str();
-	outf.close();
-	return 0;
-}
+
+
+
