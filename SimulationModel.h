@@ -45,13 +45,9 @@ class SimulationModel//: public TObject
     Graph* graph;
 	TRandom3* Rnd;
 
-	//debug only
-    void setEnergy(double ) ;
-    void setsum(double ) ;
-
 	double E;//current energy
 	double M; //current magnetization
-	double sum_m;
+
 
 	ClassDef(SimulationModel,1); //Used by to define a class ROOT
 };
