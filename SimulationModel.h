@@ -18,42 +18,36 @@ typedef vector<Spin>::size_type vd_sz;
 
 class SimulationModel//: public TObject
 {
-    // classe in cui definisco il grafo
-    
-    public:
-	SimulationModel();
-	virtual ~SimulationModel();
+  public:
+  SimulationModel();
+  virtual ~SimulationModel();
 
-	//
-    void simulate(double beta, vd_sz n_iterations=1000);
-    virtual double magnetization()=0;
-    virtual double hamiltonian()=0;
-    virtual double mVar(double old_val, double new_val)=0;
-    virtual double energyVar(vd_sz node_i, double old_val, double new_val)=0;
+  void simulate(double beta, vd_sz n_iterations=1000);
+  virtual double magnetization()=0;
+  virtual double hamiltonian()=0;
+  virtual double mVar(double old_val, double new_val)=0;
+  virtual double energyVar(vd_sz node_i, double old_val, double new_val)=0;
 
-    //Actions on graph
-    virtual void resetGraph()=0; //
-    virtual void newGraph(vd_sz ,const char*)=0; //
+  //Actions on graph
+  virtual void resetGraph()=0; //
+  virtual void newGraph(vd_sz ,const char*)=0; //
 
-    double getEnergy() const ;
-    double getMagnetization() const;
-    void flipSpin(vd_sz);
+  double getEnergy() const ;
+  double getMagnetization() const;
+  void flipSpin(vd_sz);
     
 
 
-    protected:
-    Graph* graph;
-	TRandom3* Rnd;
+  
+ protected:
+  Graph* graph;
+  TRandom3* Rnd;
 
-	//debug only
-    void setEnergy(double ) ;
-    void setsum(double ) ;
+  double E;//current energy
+  double M; //current magnetization
 
-	double E;//current energy
-	double M; //current magnetization
-	double sum_m;
 
-	ClassDef(SimulationModel,1); //Used by to define a class ROOT
+  ClassDef(SimulationModel,1); //Used by to define a class ROOT
 };
 
 #endif /* SIMULATIONMODEL_H_ */
