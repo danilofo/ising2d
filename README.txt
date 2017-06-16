@@ -1,4 +1,4 @@
-# ising2d
+Ising-2D
 
 Istruzioni per avviare la simulazione.
 
