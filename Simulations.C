@@ -77,8 +77,8 @@ int magnvstime(IsingModel& ising_model, double beta=0.5, unsigned int max_mcs=20
 
 int critical_temperature(IsingModel &ising_model,unsigned max_mcs=1000){
   //This function computes the critical temperature using the Binder cumulant technique and output result on a file
-  vector<unsigned> length_list={10,12,15,16,20};
-  vector<const char *> name_list={"10x10","12x12","15x15","16x16","20x20"};
+  vector<unsigned> length_list={12,15,16,20};
+  vector<const char *> name_list={"12x12","15x15","16x16","20x20"};
   vec_sz list_size = length_list.size();
   cout<<"[*]Computing critical temperature."<<endl;
   cout<<"Simulation performed for the following lattice sizes:"<<endl;
@@ -145,7 +145,7 @@ int critical_temperature(IsingModel &ising_model,unsigned max_mcs=1000){
     TH1D *hfit = new TH1D(name_list[i],name_list[i],temp_steps,min_beta-step_width/2.,max_beta+step_width/2.);
     for(unsigned j=0; j<temp_steps; j++){
       hfit->Fill(inv_temperature[j],binder_cumulants[idx(i,j,temp_steps)]);
-    }    hfit->Fit("fit_f");
+    }    hfit->Fit("fit_f","0");
     TF1 *f_i_fit = hfit->GetFunction("fit_f");
     for(unsigned j=0; j<n_fitparam; j++) {
       fitparam_matrix[idx(i,j,n_fitparam)]=f_i_fit->GetParameter(j);
@@ -310,26 +310,6 @@ int critical_exponents(IsingModel& ising_model, unsigned long int max_mcs =1000,
     cout<<"Offset (error):"<<fit_hc->GetParameter(0)<<" ("<<fit_hc->GetParError(0) <<")"<<endl;
     cout<<"Exponent (error):"<<fit_hc->GetParameter(1)<<" ("<<fit_hc->GetParError(1)<<")"<<endl;
     
-    TF1 *fit_line = new TF1("line_fit",line,log(2.26-2.1),log(2.26-1.8),2);
-    //fit_line->SetParLimits(0,-2,-1);
-    TH1D *chi_hist = new TH1D("susceptibility_hist","Magnetic susceptibility vs T",temp_steps,log(2.26-2.2),log (2.26-1.7) );
-    for(unsigned j=0; j<temp_steps; j++){
-      if(1./inv_temperature[j]<2.1 && (1./inv_temperature[j]>1.8) )
-	chi_hist->Fill(log(2.26-1./inv_temperature[j]),log(susceptibility[j]) );
-    }
-    chi_hist->Fit("line_fit","0"); //Option "0" to disable graphical output
-    TF1 *fit_chi = chi_hist->GetFunction("line_fit");
-    chi_hist->Write();
-    //Close the output file
-    f_hc->Close();
-    cout<<endl;
-    cout<<"[+]Fit results for heat capacity"<<endl;
-    cout<<"Offset (error):"<<fit_hc->GetParameter(0)<<" ("<<fit_hc->GetParError(0) <<")"<<endl;
-    cout<<"Exponent (error):"<<fit_hc->GetParameter(1)<<" ("<<fit_hc->GetParError(1)<<")"<<endl;
-    cout<<endl;
-    cout<<"[+]Fit results for susceptibility"<<endl;
-    cout<<"Exponent (error):"<<fit_chi->GetParameter(0)<<" ("<<fit_chi->GetParError(0)<<")"<<endl;
-
     cout<<endl;
     cout<<endl;
     return 0;
@@ -345,7 +325,7 @@ int simulate_ising( unsigned mcs=100, unsigned  max_side_dim=20)
   //Magnetization as a function of MC steps performed
   magnvstime(ising_model,1000);
   //Magnetization as a function of temperature
-  magnvstemp(ising_model,5000);
+  magnvstemp(ising_model,1000);
   //Compute the critical temperature
   critical_temperature(ising_model,mcs);
   //Compute the critical exponents of susceptibility and heat capacity
