@@ -24,6 +24,7 @@ class IsingModel: public SimulationModel {
   ~IsingModel();
   //
   vec_sz getSideDimension();
+  const double getSpin(vec_sz i);
   //simulation
   virtual double magnetization();
   virtual double hamiltonian(); //virtual qualifier here is ignored, but improves readability

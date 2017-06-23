@@ -12,7 +12,7 @@ ClassImp(IsingModel)
 IsingModel::IsingModel(vec_sz length, double J): SimulationModel(),lattice(NULL),coupling(J)
 { //initialize
   //cout<<"[D]IsingModel: constructing TRandom3 Rnd...";
-  this->Rnd = new TRandom3(823); //TODO: fix the seed choice
+  this->Rnd = new TRandom3(); //Default choice is a UUID based on machine time
   //cout<<"[D]IsingModel: Rnd...completed"<<endl;
   //cout<<"[D]IsingModel: constructing Lattice lattice...";
   this->lattice = new Lattice(length,Rnd);
@@ -36,6 +36,9 @@ vd_sz IsingModel::getSideDimension(){
   return static_cast<vd_sz>(sqrt(raw_dim));
 }
 
+const double IsingModel::getSpin( vec_sz i ){
+  return this->lattice->getNodeValue(i);
+}
 double IsingModel::magnetization(){
   if(lattice==NULL){
     cout<<"[!]IsingModel:invalid lattice pointer received!"<<endl;

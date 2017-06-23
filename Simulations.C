@@ -44,7 +44,7 @@ double line(double *x,double *par){
   return par[0]*(x[0])+par[1];
 }
 
-int magnvstime(IsingModel& ising_model, double beta=0.5, unsigned int max_mcs=2000, const char *outfilename1="magnvstime.root"){
+int magnvstime(IsingModel& ising_model, unsigned int max_mcs=2000, double beta=8, const char *outfilename1="magnvstime.root"){
   //this function draws a graph of the magnetization as a function of MCS
   unsigned int max_side_dim=ising_model.getSideDimension(); //declare the size of the lattice, via its side length
   unsigned int lattice_dim= max_side_dim*max_side_dim; //coincide with the size of a mcs
@@ -70,8 +70,22 @@ int magnvstime(IsingModel& ising_model, double beta=0.5, unsigned int max_mcs=20
   magn_vs_time->Write(); //write histogram to file
   out_root.Close();
   cout<<"[+]The histogram has been saved to a file."<<endl;
+  
+	ostringstream matrixbuffer;
+  unsigned side=ising_model.getSideDimension();
+  cout<<side<<endl;
+  for(unsigned k=0; k<side*side; k++){
+    matrixbuffer<<ising_model.getSpin(k)<<" ";
+    if( (k+1)%side==0 ) matrixbuffer<<"\n";
+  }
+  
+  ofstream outmat;
+  outmat.open("matrix.dat");
+  cout<<"[+]Saving the spin matrix to a file"<<endl;
+  outmat<<matrixbuffer.str();
+  outmat.close();
   cout<<endl;
-  cout<<endl;
+cout<<endl;
   return 0;
 }
 
@@ -189,23 +203,23 @@ int magnvstemp(IsingModel& ising_model, unsigned long int max_mcs=1000, unsigned
   }
   ostringstream buffer;
   //parameters of the simulations
-  double max_beta = 10; // min temp T=5e-2
-  double min_beta = 0.2; 	//max temp = infinity
-  unsigned temp_steps=120;
+  double max_temp = 4;
+  double min_temp = 0.1; 	
+  unsigned temp_steps=250;
   vector<double> inv_temperature(temp_steps,0);
   for (unsigned i = 0; i<temp_steps; i++ ){
-    inv_temperature[i]=min_beta+i*(max_beta-min_beta)/temp_steps;
+    inv_temperature[i]=1/(min_temp+i*(max_temp-min_temp)/temp_steps );
   }
   //variabl for the results
   double m_m;//average magnetization
   //histogram
-  TH1D* magn_vs_temp= new TH1D ("MagnvsT","Magnetization vs T",100*temp_steps,0.001/max_beta-0.001,1./min_beta+0.001);
+  TH1D* magn_vs_temp= new TH1D ("MagnvsT","Magnetization vs T",100*temp_steps,min_temp-0.001,max_temp+0.001);
   magn_vs_temp->SetDirectory(0); //because we want a persistent output
   cout<<"[+]Progress:"<<endl;
   for (unsigned j = 0; j<temp_steps; j++ ){
     m_m=0;
     if(j%10==0) cout<<"  Step "<<j<<" of "<<temp_steps<<endl;
-    ising_model.resetGraph(); //reset each time!
+    // ising_model.resetGraph(); //reset each time!
     ising_model.simulate(inv_temperature[j],1000);//burn-in time
     for(unsigned k=0; k<max_mcs; k++)
       {
@@ -316,27 +330,27 @@ int critical_exponents(IsingModel& ising_model, unsigned long int max_mcs =1000,
 }
 
 
-int simulate_ising( unsigned mcs=100, unsigned  max_side_dim=20)
+int simulate_ising( unsigned mcs=10000,double beta=10, unsigned  max_side_dim=20)
 { 	
   cout<<"[***]Metropolis Monte Carlo simulation of a 2D Ising model."<<endl;
   cout<<"[+]Creating the Ising model object"<<endl;
   IsingModel ising_model(max_side_dim);
   cout<<endl;
   //Magnetization as a function of MC steps performed
-  magnvstime(ising_model,1000);
+  //magnvstime(ising_model,mcs,beta);
   //Magnetization as a function of temperature
-  magnvstemp(ising_model,1000);
+  magnvstemp(ising_model,mcs);
   //Compute the critical temperature
-  critical_temperature(ising_model,mcs);
+  //critical_temperature(ising_model,mcs);
   //Compute the critical exponents of susceptibility and heat capacity
-  critical_exponents(ising_model,mcs);
+  //critical_exponents(ising_model,mcs);
   //Drawings
   //1) Magnetization/ MCS
-  new TCanvas();
+  /*new TCanvas();
   TFile *mvst_file=new TFile("magnvstime.root","read");
   TH1D *mvst_hist=(TH1D*) mvst_file->Get("MagnvsTime");
   mvst_hist->SetDirectory(0);
-  mvst_hist->Draw("hist");
+  mvst_hist->Draw("hist");*/
   //2) Magnetization / T
   new TCanvas();
   TFile *mvsTemp_file=new TFile("magnvsT.root","read");
@@ -344,8 +358,6 @@ int simulate_ising( unsigned mcs=100, unsigned  max_side_dim=20)
   mvsTemp_hist->SetDirectory(0);
   mvsTemp_hist->SetMarkerStyle(7);
   mvsTemp_hist->Draw("PHIST");
-  
-  
   return 0;
 }
 
