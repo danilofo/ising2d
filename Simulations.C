@@ -94,6 +94,8 @@ int critical_temperature(IsingModel &ising_model,unsigned max_mcs=1000){
   vector<unsigned> length_list={12,15,16,20};
   vector<const char *> name_list={"12x12","15x15","16x16","20x20"};
   vec_sz list_size = length_list.size();
+  vector<const char *> name_hist_list={"hist10","hist12","hist15","hist16","hist20"};
+  const char *hfitName;
   cout<<"[*]Computing critical temperature."<<endl;
   cout<<"Simulation performed for the following lattice sizes:"<<endl;
   for (unsigned i=0; i<list_size; i++) cout<<" "<<length_list[i]<<" ";
@@ -114,9 +116,16 @@ int critical_temperature(IsingModel &ising_model,unsigned max_mcs=1000){
   for(unsigned i=0; i< list_size; i++)
     { 	cout<<"[+]Simulation on the "<<length_list[i]<<" lattice started..."<<endl;
       ising_model.newGraph(length_list[i]);
+      ofstream outf;
+      string name(name_hist_list[i]);
+      outf.open(name.append(".dat"));
+      if (!outf.is_open()){
+	cout<<"\n[!]Could not open the outfile"<<endl;
+	return -1;
+      }
+      ostringstream buffer;
       for(unsigned j=0; j < temp_steps ; j++)
-	{ 
-	  //vectors of energy and magnetizations of the current model
+	{ //vectors of energy and magnetizations of the current model
 	  ising_model.resetGraph(); //reset each time!
 	  //burn-in time
 	  ising_model.simulate(inv_temperature[j],1000); //burn-in time (empirical)
@@ -143,8 +152,11 @@ int critical_temperature(IsingModel &ising_model,unsigned max_mcs=1000){
 	  //fourth moment of the magnetization
 	  m_4=(m_4 / max_mcs);
 	  binder_cumulants[idx(i,j, temp_steps)] = 1 - ( m_4/(3*m_2*m_2)); //compute the binder's cumulant for this T
+	  buffer<<binder_cumulants[idx(i,j, temp_steps)]<<endl;
 	}
       cout<<"[+]Simulation completed."<<endl;
+      outf<<buffer.str();
+      outf.close();
     }
 
   cout<<"[+]Beginning procedure used to find the critical temperature:"<<endl;
@@ -177,7 +189,7 @@ int critical_temperature(IsingModel &ising_model,unsigned max_mcs=1000){
 	  params[j]=fitparam_matrix[idx(i,j,M)]-fitparam_matrix[idx(i+1,j,M)];
 	}
       fit_f->SetParameters(params);
-      criticalT[i]=1./(fit_f->GetX(0,0.42,0.5) ); //revert inverse temp
+      criticalT[i]=1./(fit_f->GetX(0,0.44,0.5) ); //revert inverse temp
     }
   cout<<"[+]Computing critical temperature T_c using the Binder's cumulant; "<<endl;
   cout<<"   The following values are the estimates for T_c :"<<endl;
@@ -189,7 +201,7 @@ int critical_temperature(IsingModel &ising_model,unsigned max_mcs=1000){
   return 0;
 }
 
-int magnvstemp(IsingModel& ising_model, unsigned long int max_mcs=1000, unsigned side_dim=16, const char *outfilename="magnvsT.root")
+int magnvstemp(IsingModel& ising_model, unsigned long int max_mcs=6000, unsigned side_dim=16, const char *outfilename="magnvsT.root")
 {
   //CREATE A  GRAPH OF ABSOLUTE MAGNETIZATION VS TEMPERATURE
   //declare streams for the output
@@ -205,7 +217,7 @@ int magnvstemp(IsingModel& ising_model, unsigned long int max_mcs=1000, unsigned
   //parameters of the simulations
   double max_temp = 4;
   double min_temp = 0.1; 	
-  unsigned temp_steps=250;
+  unsigned temp_steps=100;
   vector<double> inv_temperature(temp_steps,0);
   for (unsigned i = 0; i<temp_steps; i++ ){
     inv_temperature[i]=1/(min_temp+i*(max_temp-min_temp)/temp_steps );
@@ -216,19 +228,24 @@ int magnvstemp(IsingModel& ising_model, unsigned long int max_mcs=1000, unsigned
   TH1D* magn_vs_temp= new TH1D ("MagnvsT","Magnetization vs T",100*temp_steps,min_temp-0.001,max_temp+0.001);
   magn_vs_temp->SetDirectory(0); //because we want a persistent output
   cout<<"[+]Progress:"<<endl;
+  //set the model in an ordered phase
+  ising_model.resetGraph();
   for (unsigned j = 0; j<temp_steps; j++ ){
+    
     m_m=0;
     if(j%10==0) cout<<"  Step "<<j<<" of "<<temp_steps<<endl;
-    // ising_model.resetGraph(); //reset each time!
+    ising_model.resetGraph(); //reset each time (in an ordered state)
     ising_model.simulate(inv_temperature[j],1000);//burn-in time
     for(unsigned k=0; k<max_mcs; k++)
       {
 	ising_model.simulate(inv_temperature[j],side_dim*side_dim);
 	m_m+=ising_model.getMagnetization()/max_mcs;
       }
-    buffer<<inv_temperature[j]<<"\t"<<fabs(m_m)<<"\n";
+    buffer<<1./inv_temperature[j]<<"\t"<<fabs(m_m)<<"\n";
     magn_vs_temp->Fill(1./inv_temperature[j], fabs(m_m));
   }
+  outf<<buffer.str();
+  outf.close();
   TFile out_root(outfilename,"recreate", "Magnetization vs T");
   magn_vs_temp->Write(); //write histogram to file
   out_root.Close();
@@ -246,15 +263,16 @@ int critical_exponents(IsingModel& ising_model, unsigned long int max_mcs =1000,
   ising_model.newGraph(side_dim);
   
   //parameters of the simulations
-  double max_beta = 1./1.95; 
-  double min_beta = 1./2.5;       
+  double max_temp = 4;
+  double min_temp = 0.1; 	
   unsigned temp_steps=150;
   vector<double> inv_temperature(temp_steps,0);
   vector<double> heat_capacity(temp_steps,0);
   vector<double> susceptibility(temp_steps,0);
   for (unsigned i = 0; i<temp_steps; i++ ){
-    inv_temperature[i]=min_beta+i*(max_beta-min_beta)/temp_steps;
+    inv_temperature[i]=1/(min_temp+i*(max_temp-min_temp)/temp_steps );
   }
+
   //variables for the results
   vector<double> energy(max_mcs,0);
   vector<double> magnetization(max_mcs,0);
@@ -310,8 +328,8 @@ int critical_exponents(IsingModel& ising_model, unsigned long int max_mcs =1000,
   outf_chi.close();
 
   //Fit
-  TF1 *fit_pl = new TF1("fit_pl",power_law,1./max_beta,1./min_beta,2);
-  TH1D *heatcap_hist = new TH1D("heat_capacity_hist","Heat capacity vs T",temp_steps,1./max_beta-0.001,1./min_beta);
+  TF1 *fit_pl = new TF1("fit_pl",power_law,min_temp,max_temp,2);
+  TH1D *heatcap_hist = new TH1D("heat_capacity_hist","Heat capacity vs T",temp_steps,min_temp-0.001,max_temp+0.001);
     for(unsigned j=0; j<temp_steps; j++){
       heatcap_hist->Fill(1./inv_temperature[j],heat_capacity[j]);
     }
@@ -330,27 +348,27 @@ int critical_exponents(IsingModel& ising_model, unsigned long int max_mcs =1000,
 }
 
 
-int simulate_ising( unsigned mcs=10000,double beta=10, unsigned  max_side_dim=20)
+int simulate_ising( unsigned mcs=3000,double beta=10, unsigned  max_side_dim=20)
 { 	
   cout<<"[***]Metropolis Monte Carlo simulation of a 2D Ising model."<<endl;
   cout<<"[+]Creating the Ising model object"<<endl;
   IsingModel ising_model(max_side_dim);
   cout<<endl;
   //Magnetization as a function of MC steps performed
-  //magnvstime(ising_model,mcs,beta);
+  magnvstime(ising_model,mcs,beta);
   //Magnetization as a function of temperature
-  magnvstemp(ising_model,mcs);
+  magnvstemp(ising_model);
   //Compute the critical temperature
-  //critical_temperature(ising_model,mcs);
+  critical_temperature(ising_model,mcs);
   //Compute the critical exponents of susceptibility and heat capacity
-  //critical_exponents(ising_model,mcs);
+  critical_exponents(ising_model,10000);
   //Drawings
   //1) Magnetization/ MCS
-  /*new TCanvas();
+  new TCanvas();
   TFile *mvst_file=new TFile("magnvstime.root","read");
   TH1D *mvst_hist=(TH1D*) mvst_file->Get("MagnvsTime");
   mvst_hist->SetDirectory(0);
-  mvst_hist->Draw("hist");*/
+  mvst_hist->Draw("hist");
   //2) Magnetization / T
   new TCanvas();
   TFile *mvsTemp_file=new TFile("magnvsT.root","read");

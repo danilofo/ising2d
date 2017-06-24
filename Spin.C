@@ -27,6 +27,6 @@ void Spin::flipSpin(){
 	this->spin-= 2*this->spin;
 }
 
-double Spin::getSpinValue(){
+double Spin::getSpinValue() const{
 	return this->spin;
 }

@@ -20,7 +20,7 @@ class Spin{
 	void setSpinUp();
 	void setSpinDown();
 	void flipSpin();
-	double getSpinValue();
+	double getSpinValue() const;
 
 	private:
 	double spin;

@@ -29,16 +29,13 @@ class SimulationModel//: public TObject
   virtual double energyVar(vd_sz node_i, double old_val, double new_val)=0;
 
   //Actions on graph
-  virtual void resetGraph()=0; //
+  virtual void resetGraph(const char*)=0; //
   virtual void newGraph(vd_sz ,const char*)=0; //
 
   double getEnergy() const ;
   double getMagnetization() const;
   void flipSpin(vd_sz);
-    
-
-
-  
+      
  protected:
   Graph* graph;
   TRandom3* Rnd;

@@ -24,14 +24,14 @@ class IsingModel: public SimulationModel {
   ~IsingModel();
   //
   vec_sz getSideDimension();
-  const double getSpin(vec_sz i);
-  //simulation
+  double getSpin(vec_sz i) const;
+  //simulation 
   virtual double magnetization();
   virtual double hamiltonian(); //virtual qualifier here is ignored, but improves readability
   virtual double mVar(double old_val, double new_val);
   virtual double energyVar(vd_sz node_i, double old_val, double new_val);
   //actions on the lattice
-  virtual void resetGraph(); //
+  virtual void resetGraph(const char* ="ordered"); //
   virtual void newGraph(vec_sz N,const char* flag="random"); 
 
  ClassDef(IsingModel,1); //Used by to define a class ROOT

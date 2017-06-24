@@ -36,7 +36,7 @@ vd_sz IsingModel::getSideDimension(){
   return static_cast<vd_sz>(sqrt(raw_dim));
 }
 
-const double IsingModel::getSpin( vec_sz i ){
+double IsingModel::getSpin( vec_sz i ) const{
   return this->lattice->getNodeValue(i);
 }
 double IsingModel::magnetization(){
@@ -99,7 +99,7 @@ double IsingModel::mVar(double old_val, double new_val){
   return (-2.0)*(old_val)/N;
 }
 
-void IsingModel::resetGraph(){
+void IsingModel::resetGraph(const char* mod){
   if(lattice==NULL){
     cout<<"[!]IsingModel:resetGraph: invalid lattice pointer"<<endl;
     return;
