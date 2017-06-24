@@ -3,12 +3,14 @@ set out 'chivsT.eps'
 
 set   autoscale                        # scale axes automatically
 set xr [1.0:5.0]
-set yr [0.0:1]
+set yr [0:0.18]
 unset log                              # remove any log-scaling
 unset label                            # remove any previous labels
 set xtic auto                          # set xtics automatically
 set ytic auto                          # set ytics automatically
 set title "Suscettibilità magnetica in funzione della temperatura (unità naturali) "
+
+f(x)=abs(x-2.269)**(-7/4)
 
 set xlabel "$T[J/k_B]$"
 set ylabel "$\chi[\mu/k_B]$"

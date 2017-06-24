@@ -3,7 +3,7 @@ set out 'heatcap.eps'
 
 set   autoscale                        # scale axes automatically
 set xr [1.0:5.0]
-set yr [0.0:0.005]
+set yr [0.0:0.008]
 unset log                              # remove any log-scaling
 unset label                            # remove any previous labels
 set xtic auto                          # set xtics automatically

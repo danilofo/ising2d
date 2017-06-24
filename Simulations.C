@@ -272,19 +272,19 @@ int critical_exponents(IsingModel& ising_model, unsigned long int max_mcs =1000,
   for (unsigned i = 0; i<temp_steps; i++ ){
     inv_temperature[i]=1/(min_temp+i*(max_temp-min_temp)/temp_steps );
   }
-
   //variables for the results
   vector<double> energy(max_mcs,0);
   vector<double> magnetization(max_mcs,0);
   cout<<"[+]Progress:"<<endl;
+  ising_model.resetGraph();
   for (unsigned j = 0; j<temp_steps; j++ ){
     double m_m=0;
     double m_2=0;
     double e_2=0;
     double e_m=0;
-   if(j%10==0) cout<<"   Step "<<j<<" of "<<temp_steps<<endl; 
-    ising_model.resetGraph(); //reset each time!
-    ising_model.simulate(inv_temperature[j],300);
+    //ising_model.resetGraph(); //reset each time  
+    if(j%10==0) cout<<"   Step "<<j<<" of "<<temp_steps<<endl; 
+    ising_model.simulate(inv_temperature[j],2000);
     for(unsigned k=0; k<max_mcs; k++)
       {
 	ising_model.simulate(inv_temperature[j],side_dim*side_dim);
@@ -296,13 +296,14 @@ int critical_exponents(IsingModel& ising_model, unsigned long int max_mcs =1000,
 	e_2+= energy[k]*energy[k]/max_mcs;
       }
     m_m=m_m/max_mcs;
-    m_2=m_2/max_mcs-m_m;
+    m_2=m_2/max_mcs-m_m*m_m;
     e_m=e_m;
     e_2=e_2-e_m*e_m;
     heat_capacity[j]=inv_temperature[j]*inv_temperature[j]*(e_2);
-    susceptibility[j]=m_2/inv_temperature[j];
+    susceptibility[j]=m_2*inv_temperature[j];
   }
   cout<<"[+]Writing the heat capacity and susceptibility vectors"<<endl;
+
   ofstream outfH;
   outfH.open("heatcap.dat");
   if (!outfH.is_open()){
@@ -355,13 +356,13 @@ int simulate_ising( unsigned mcs=3000,double beta=10, unsigned  max_side_dim=20)
   IsingModel ising_model(max_side_dim);
   cout<<endl;
   //Magnetization as a function of MC steps performed
-  magnvstime(ising_model,mcs,beta);
+  magnvstime(ising_model,2*mcs/3,beta);
   //Magnetization as a function of temperature
   magnvstemp(ising_model);
   //Compute the critical temperature
   critical_temperature(ising_model,mcs);
   //Compute the critical exponents of susceptibility and heat capacity
-  critical_exponents(ising_model,10000);
+  critical_exponents(ising_model,mcs);
   //Drawings
   //1) Magnetization/ MCS
   new TCanvas();
