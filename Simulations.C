@@ -234,7 +234,7 @@ int magnvstemp(IsingModel& ising_model, unsigned long int max_mcs=6000, unsigned
     
     m_m=0;
     if(j%10==0) cout<<"  Step "<<j<<" of "<<temp_steps<<endl;
-    ising_model.resetGraph(); //reset each time (in an ordered state)
+    //ising_model.resetGraph(); //reset each time (in an ordered state)
     ising_model.simulate(inv_temperature[j],1000);//burn-in time
     for(unsigned k=0; k<max_mcs; k++)
       {
